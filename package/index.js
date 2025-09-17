@@ -4,8 +4,8 @@
  */
 
 function placeholder() {
-  console.log("This is a placeholder package for offckb");
-  return "offckb placeholder";
+  console.log('This is a placeholder package for offckb');
+  return 'offckb placeholder';
 }
 
-module.exports = placeholder;
+module.exports = placeholder; 

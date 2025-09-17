@@ -11,7 +11,7 @@ npm install offckb
 ## Usage
 
 ```javascript
-const offckb = require("offckb");
+const offckb = require('offckb');
 offckb();
 ```
 
