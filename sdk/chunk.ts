@@ -4,20 +4,32 @@ import crypto from "crypto";
 import { normalizePath } from "./util";
 import { HashFunction, ckbBlake2bHash } from "./hash";
 
+export interface Chunk {
+  path: string;
+  hash: string;
+  index: number;
+}
+
+export interface FileChunks {
+  chunks: Array<Chunk>;
+  hash: string;
+  hashMethod: string; // e.g., "ckb-blake2b", "sha256"
+}
+
 /**
  * Chunks a file into smaller pieces of specified size and computes its hash.
  * @param filePath Path to the file to chunk
  * @param outputDir Directory to save the chunks
  * @param chunkSize Size of each chunk in bytes (default 300KB)
- * @param hashFn Optional hash function (default: SHA256)
- * @returns Object with array of chunk objects (each with path and hash) and the overall file hash
+ * @param hashFn Optional hash function (default: ckbBlake2bHash)
+ * @returns Object with array of chunk objects (each with path, hash, and index) and the overall file hash
  */
 export async function chunkFile(
   filePath: string,
   outputDir: string,
   chunkSize: number = 300 * 1024,
   hashFn: HashFunction = ckbBlake2bHash,
-): Promise<{ chunks: Array<{ path: string; hash: string }>; hash: string }> {
+): Promise<FileChunks> {
   const normalizedFilePath = normalizePath(filePath);
   const normalizedOutputDir = normalizePath(outputDir);
   const fileName = path.basename(
@@ -25,7 +37,7 @@ export async function chunkFile(
     path.extname(normalizedFilePath),
   );
   const allData: Buffer[] = [];
-  const chunks: Array<{ path: string; hash: string }> = [];
+  const chunks: Array<Chunk> = [];
 
   // Ensure output directory exists
   await fs.promises.mkdir(normalizedOutputDir, { recursive: true });
@@ -48,7 +60,7 @@ export async function chunkFile(
       );
       const chunkHash = hashFn(chunkData.slice(0, chunkSize));
       await fs.promises.writeFile(chunkPath, chunkData.slice(0, chunkSize));
-      chunks.push({ path: chunkPath, hash: chunkHash });
+      chunks.push({ path: chunkPath, hash: chunkHash, index: chunkIndex });
       chunkIndex++;
 
       const remaining = chunkData.slice(chunkSize);
@@ -66,16 +78,16 @@ export async function chunkFile(
     );
     const chunkHash = hashFn(chunkData);
     await fs.promises.writeFile(chunkPath, chunkData);
-    chunks.push({ path: chunkPath, hash: chunkHash });
+    chunks.push({ path: chunkPath, hash: chunkHash, index: chunkIndex });
   }
 
   const overallHash = hashFn(Buffer.concat(allData));
-  return { chunks, hash: overallHash };
+  return { chunks, hash: overallHash, hashMethod: hashFn.name };
 }
 
 /**
  * Merges chunks back into the original file and validates the hash.
- * @param chunks Array of chunk objects with path and hash
+ * @param chunks Array of chunk objects with path, hash, and index
  * @param expectedHash The expected hash of the merged file
  * @param outputPath Path where to save the merged file
  * @param hashFn Optional hash function (default: SHA256)
@@ -83,21 +95,16 @@ export async function chunkFile(
  * @throws Error if hash validation fails
  */
 export async function mergeChunks(
-  chunks: Array<{ path: string; hash: string }>,
+  chunks: Array<Chunk>,
   expectedHash: string,
   outputPath: string,
   hashFn: HashFunction = ckbBlake2bHash,
 ): Promise<string> {
   const normalizedOutputPath = normalizePath(outputPath);
   const output = fs.createWriteStream(normalizedOutputPath);
-  const hash = crypto.createHash("sha256"); // For accumulating data, but we'll use hashFn at the end
 
-  // Sort chunks by their number to ensure correct order
-  const sortedChunks = chunks.sort((a, b) => {
-    const aMatch = a.path.match(/\.chunk(\d+)$/);
-    const bMatch = b.path.match(/\.chunk(\d+)$/);
-    return parseInt(aMatch![1]) - parseInt(bMatch![1]);
-  });
+  // Sort chunks by their index to ensure correct order
+  const sortedChunks = chunks.sort((a, b) => a.index - b.index);
 
   const allMergedData: Buffer[] = [];
   for (const chunk of sortedChunks) {

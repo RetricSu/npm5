@@ -7,7 +7,7 @@ import ccc from "@ckb-ccc/core";
 describe("package contract", () => {
   test("should execute successfully", async () => {
     const input = "~/Desktop/offckb-placeholder";
-    const output = "~/Desktop/npm5";
+    const output = "~/Desktop/npm5/test-package";
     const tgzPath = await bundlePackage(input, output);
 
     await unbundlePackage(tgzPath, output);
@@ -30,10 +30,10 @@ describe("file chunking", () => {
     chunks.forEach((chunk) => {
       expect(chunk.path).toBeDefined();
       expect(chunk.hash).toBeDefined();
-      expect(chunk.hash.length).toBe(64); // SHA256 hex length
+      expect(chunk.hash.length).toBe(64); // hash hex length
     });
     expect(hash).toBeDefined();
-    expect(hash.length).toBe(64); // SHA256 hex length
+    expect(hash.length).toBe(64); // hash hex length
 
     // Merge the chunks back
     const resultPath = await mergeChunks(chunks, hash, mergedPath);
