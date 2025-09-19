@@ -19,7 +19,6 @@ import systemScripts from "../deployment/system-scripts.json";
 import scripts from "../deployment/scripts.json";
 import { normalizePath } from "./util";
 import path from "path";
-import fs from "fs";
 
 export class PackageContract {
   private data: PackageData;

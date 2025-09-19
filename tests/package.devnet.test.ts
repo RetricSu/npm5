@@ -14,7 +14,7 @@ describe("package contract devnet", () => {
 
   test("Package Contract Class", async () => {
     const packageFolder = "./node_modules/ckb-testtool";
-    const outputDir = "./build";
+    const outputDir = "./test-package";
     const contract = await PackageContract.buildFromPublishingChunkCells(
       packageFolder,
       signer,
