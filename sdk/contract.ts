@@ -93,7 +93,7 @@ export class PackageContract {
       tempFile,
       client,
     );
-    
+
     const unbundlePath = await unbundlePackage(mergedFile, outputDir);
     return unbundlePath;
   }

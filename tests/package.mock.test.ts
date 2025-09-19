@@ -1,4 +1,4 @@
-import { hexFrom, Transaction, hashTypeToBytes } from "@ckb-ccc/core";
+import { hexFrom, Transaction, hashTypeToBytes, hashCkb } from "@ckb-ccc/core";
 import { readFileSync } from "fs";
 import {
   Resource,
@@ -29,12 +29,23 @@ describe("package contract", () => {
       false,
     );
 
+    // cell deps
+    const cellDep1 = resource.mockCell(
+      alwaysSuccessScript,
+      undefined,
+      "0xFF000000000000000000000000000000",
+    );
+    const cellDep2 = resource.mockCell(
+      alwaysSuccessScript,
+      undefined,
+      "0xFF000000000000000000000000000000",
+    );
     const chunk1: ChunkLike = {
-      hash: "0x575536eafe0a9020b2087d45a522e8a4bfcfd62c",
+      hash: hashCkb(cellDep1.outputData),
       index: 0,
     };
     const chunk2: ChunkLike = {
-      hash: "0x575536eafe0a9020b2087d45a522e8a4bfcfd62c",
+      hash: hashCkb(cellDep2.outputData),
       index: 1,
     };
     const originalPackage: PackageDataLike = {
@@ -52,17 +63,6 @@ describe("package contract", () => {
         "000102030405060708090a0b0c0d0e0f000102030405060708090a0b0c0d0e0f",
     );
 
-    // cell deps
-    const cellDep1 = resource.mockCell(
-      alwaysSuccessScript,
-      undefined,
-      "0xFF000000000000000000000000000000",
-    );
-    const cellDep2 = resource.mockCell(
-      alwaysSuccessScript,
-      undefined,
-      "0xFF000000000000000000000000000000",
-    );
     tx.cellDeps.push(
       Resource.createCellDep(cellDep1, "code"),
       Resource.createCellDep(cellDep2, "code"),

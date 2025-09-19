@@ -30,7 +30,7 @@ describe("Utf8 to Bytes20 encoding", () => {
 describe("ChunkCodec", () => {
   it("should encode and decode a Chunk", () => {
     const originalChunk: ChunkLike = {
-      hash: "0x" + "b".repeat(40),
+      hash: "0x" + "b".repeat(64),
       index: 123,
     };
     const encoded = ChunkCodec.encode(originalChunk);
@@ -43,7 +43,7 @@ describe("ChunkCodec", () => {
 describe("PackageDataCodec", () => {
   it("should encode and decode PackageData", () => {
     const chunk: ChunkLike = {
-      hash: "0x" + "c".repeat(40),
+      hash: "0x" + "c".repeat(64),
       index: 456,
     };
     const originalPackage: PackageDataLike = {

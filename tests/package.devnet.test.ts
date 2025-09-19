@@ -25,6 +25,10 @@ describe("package contract devnet", () => {
     const txHash = await signer.sendTransaction(tx);
     console.log(`Transaction sent: ${txHash}`);
 
+    // we must wait for the transaction to be committed before we can download the package
+    // since ccc has cache for chained tx
+    await signer.client.waitTransaction(txHash, 1);
+
     const downloadedPackage = await PackageContract.downloadPackage(
       { txHash, index: "0x0" },
       outputDir,

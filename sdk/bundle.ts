@@ -76,16 +76,21 @@ export async function unbundlePackage(
     const fullPath = path.join(outputDirectory, extractedDirs[0]);
     return path.relative(process.cwd(), fullPath);
   } else if (extractedDirs.length > 1) {
-    // If multiple, try to find one that looks like a package name
-    const packageDir = extractedDirs.find(
-      (dir) => !dir.startsWith(".") && dir !== "node_modules",
-    );
+    // If multiple, try to find one that looks like a package name and contains package.json
+    const packageDir = extractedDirs.find((dir) => {
+      if (dir.startsWith(".") || dir === "node_modules") {
+        return false;
+      }
+      // Check if the directory contains a package.json file
+      const dirPath = path.join(outputDirectory, dir);
+      const packageJsonPath = path.join(dirPath, "package.json");
+      return fs.existsSync(packageJsonPath);
+    });
     const fullPath = packageDir
       ? path.join(outputDirectory, packageDir)
       : path.join(outputDirectory, extractedDirs[0]);
     return path.relative(process.cwd(), fullPath);
   }
 
-  // If no directory, return the outputDir (though unlikely)
-  return path.relative(process.cwd(), outputDirectory);
+  throw new Error("No extracted directory found");
 }

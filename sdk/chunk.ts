@@ -104,7 +104,6 @@ export async function mergeChunks(
   await fs.promises.mkdir(path.dirname(normalizedOutputPath), {
     recursive: true,
   });
-  const output = fs.createWriteStream(normalizedOutputPath);
 
   // Sort chunks by their index to ensure correct order
   const sortedChunks = chunks.sort((a, b) => a.index - b.index);
@@ -121,16 +120,13 @@ export async function mergeChunks(
       throw new Error(`Chunk ${chunk.path} hash validation failed`);
     }
     allMergedData.push(chunkData);
-    output.write(chunkData);
   }
 
-  output.end();
-  await new Promise<void>((resolve, reject) => {
-    output.on("finish", () => resolve());
-    output.on("error", reject);
-  });
+  // Write the merged data to the output file
+  const mergedBuffer = Buffer.concat(allMergedData);
+  fs.writeFileSync(normalizedOutputPath, mergedBuffer);
 
-  const actualHash = hashFn(Buffer.concat(allMergedData));
+  const actualHash = hashFn(mergedBuffer);
   const expectedHashNoPrefix = expectedHash.startsWith("0x")
     ? expectedHash.slice(2)
     : expectedHash;
