@@ -6,11 +6,17 @@ import { normalizePath } from "./util";
 const tar = require("tar");
 const Arborist = require("@npmcli/arborist");
 
+export interface BundleResult {
+  zipFilePath: string;
+  name: string;
+  version: string;
+}
+
 export async function bundlePackage(
-  packagePath: string,
-  outputPath?: string,
-): Promise<string> {
-  const pkgRoot = normalizePath(packagePath); // 要发布的目录
+  packageFolderPath: string,
+  outputDir?: string,
+): Promise<BundleResult> {
+  const pkgRoot = normalizePath(packageFolderPath); // 要发布的目录
   const pkgJson = JSON.parse(
     fs.readFileSync(`${pkgRoot}/package.json`, "utf8"),
   );
@@ -23,32 +29,68 @@ export async function bundlePackage(
 
   // 2. 把列表打成 tar → gzip
   const tgzName = `${pkgJson.name}-${pkgJson.version}.tgz`;
-  const outputDir = outputPath ? normalizePath(outputPath) : pkgRoot;
-  const fullPath = path.join(outputDir, tgzName);
+  const outputDirectory = outputDir ? normalizePath(outputDir) : pkgRoot;
+  const fullPath = path.join(outputDirectory, tgzName);
+  // Ensure output directory exists
+  await fs.promises.mkdir(outputDirectory, { recursive: true });
   await tar.create(
     {
       file: fullPath,
       cwd: pkgRoot,
-      gzip: true, // 直接 gzip
+      gzip: true,
       portable: true,
-      prefix: "package", // npm 约定顶层文件夹叫 package
+      prefix: pkgJson.name, // Use package name as prefix to mimic npm behavior
     },
     files,
   );
 
-  return fullPath;
+  return {
+    zipFilePath: fullPath,
+    name: pkgJson.name,
+    version: pkgJson.version,
+  };
 }
 
 export async function unbundlePackage(
-  tgzPath: string,
-  outputPath?: string,
+  tgzFile: string,
+  outputDir?: string,
 ): Promise<string> {
-  const outputDir = outputPath ? normalizePath(outputPath) : process.cwd();
+  // Ensure output directory exists
+  const outputDirectory = outputDir ? normalizePath(outputDir) : process.cwd();
+  await fs.promises.mkdir(outputDirectory, { recursive: true });
+
   await tar.extract({
-    file: normalizePath(tgzPath),
-    cwd: outputDir,
+    file: normalizePath(tgzFile),
+    cwd: outputDirectory,
     gzip: true,
   });
-  // The extracted content will be in a 'package' subdirectory due to the prefix
-  return path.join(outputDir, "package");
+
+  // Find the extracted directory (the one created by the tar prefix)
+  const items = fs.readdirSync(outputDirectory, { withFileTypes: true });
+  const extractedDirs = items
+    .filter((item) => item.isDirectory())
+    .map((item) => item.name);
+
+  // Assuming the tar creates one main directory
+  if (extractedDirs.length === 1) {
+    const fullPath = path.join(outputDirectory, extractedDirs[0]);
+    return path.relative(process.cwd(), fullPath);
+  } else if (extractedDirs.length > 1) {
+    // If multiple, try to find one that looks like a package name and contains package.json
+    const packageDir = extractedDirs.find((dir) => {
+      if (dir.startsWith(".") || dir === "node_modules") {
+        return false;
+      }
+      // Check if the directory contains a package.json file
+      const dirPath = path.join(outputDirectory, dir);
+      const packageJsonPath = path.join(dirPath, "package.json");
+      return fs.existsSync(packageJsonPath);
+    });
+    const fullPath = packageDir
+      ? path.join(outputDirectory, packageDir)
+      : path.join(outputDirectory, extractedDirs[0]);
+    return path.relative(process.cwd(), fullPath);
+  }
+
+  throw new Error("No extracted directory found");
 }

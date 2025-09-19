@@ -1,9 +1,8 @@
-import { hexFrom, ccc, hashTypeToBytes } from "@ckb-ccc/core";
-import scripts from "../deployment/scripts.json";
-import systemScripts from "../deployment/system-scripts.json";
-import { buildClient, buildSigner } from "./helper";
+import { ccc } from "@ckb-ccc/core";
+import { buildClient, buildSigner, compareFileTrees } from "./helper";
+import { PackageContract } from "../sdk/contract";
 
-describe("package contract", () => {
+describe("package contract devnet", () => {
   let client: ccc.Client;
   let signer: ccc.SignerCkbPrivateKey;
 
@@ -13,44 +12,32 @@ describe("package contract", () => {
     signer = buildSigner(client);
   });
 
-  test("should execute successfully", async () => {
-    const ckbJsVmScript = systemScripts.devnet["ckb_js_vm"];
-    const contractScript = scripts.devnet["package.bc"];
-
-    const mainScript = {
-      codeHash: ckbJsVmScript.script.codeHash,
-      hashType: ckbJsVmScript.script.hashType,
-      args: hexFrom(
-        "0x0000" +
-          contractScript.codeHash.slice(2) +
-          hexFrom(hashTypeToBytes(contractScript.hashType)).slice(2) +
-          "0000000000000000000000000000000000000000000000000000000000000000",
-      ),
-    };
-
-    const signerLock = (await signer.getRecommendedAddressObj()).script;
-    const toLock = {
-      codeHash: signerLock.codeHash,
-      hashType: signerLock.hashType,
-      args: signerLock.args,
-    };
-
-    const tx = ccc.Transaction.from({
-      outputs: [
-        {
-          lock: toLock,
-          type: mainScript,
-        },
-      ],
-      cellDeps: [
-        ...ckbJsVmScript.script.cellDeps.map((c) => c.cellDep),
-        ...contractScript.cellDeps.map((c) => c.cellDep),
-      ],
-    });
-
-    await tx.completeInputsByCapacity(signer);
+  test("Package Contract Class", async () => {
+    const packageFolder = "./node_modules/ckb-testtool";
+    const outputDir = "./build";
+    const contract = await PackageContract.buildFromPublishingChunkCells(
+      packageFolder,
+      signer,
+      outputDir,
+    );
+    const tx = await contract.buildCreatePackageCellTransaction(signer);
     await tx.completeFeeBy(signer, 1000);
     const txHash = await signer.sendTransaction(tx);
     console.log(`Transaction sent: ${txHash}`);
-  });
+
+    // we must wait for the transaction to be committed before we can download the package
+    // since ccc has cache for chained tx
+    await signer.client.waitTransaction(txHash, 1);
+
+    const downloadedPackage = await PackageContract.downloadPackage(
+      { txHash, index: "0x0" },
+      outputDir,
+      client,
+    );
+    expect(downloadedPackage).toBeDefined();
+
+    // Verify that the downloaded package has the same file tree as the original
+    const fileTreesMatch = compareFileTrees(packageFolder, downloadedPackage);
+    expect(fileTreesMatch).toBe(true);
+  }, 60000);
 });
