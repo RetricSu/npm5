@@ -1,4 +1,5 @@
 import fs from "fs";
+import path from "path";
 import { normalizePath } from "./util";
 import {
   Transaction,
@@ -64,59 +65,86 @@ export async function prepareChunksData(
 
 /**
  * Download chunks from CKB cells and reconstruct the file
- * @param txHash Transaction hash containing the chunks
- * @param outputPath Path where to save the reconstructed file
- * @param client CKB client instance (placeholder)
+ * @param packageCellOutpoint Transaction hash and index containing the chunks
+ * @param outputFile Path where to save the reconstructed file
+ * @param client CKB client instance
  * @returns Path to the reconstructed file
+ *
+ * Note: This function creates temporary chunk files in a subdirectory during processing
+ * and cleans them up automatically after reconstruction.
  */
-export async function downloadChunks(
-  cellOutpoint: { txHash: Hex; index: string },
-  outputPath: string,
+export async function downloadAndMergeChunks(
+  packageCellOutpoint: { txHash: Hex; index: Hex },
+  outputFile: string,
   client: ccc.Client,
 ): Promise<string> {
-  const normalizedOutputPath = normalizePath(outputPath);
-  const tx = await client.getTransaction(cellOutpoint.txHash);
+  // Ensure output directory exists
+  const normalizedOutputFilePath = normalizePath(outputFile);
+  fs.mkdirSync(path.dirname(normalizedOutputFilePath), { recursive: true });
+
+  const tx = await client.getTransaction(packageCellOutpoint.txHash);
   if (!tx) {
-    throw new Error(`Transaction ${cellOutpoint.txHash} not found`);
+    throw new Error(`Transaction ${packageCellOutpoint.txHash} not found`);
   }
-  const packageCell = tx.transaction.outputs[parseInt(cellOutpoint.index, 16)];
+  const packageCell =
+    tx.transaction.outputs[parseInt(packageCellOutpoint.index, 16)];
   if (!packageCell) {
     throw new Error(
-      `Output index ${cellOutpoint.index} not found in transaction ${cellOutpoint.txHash}`,
+      `Output index ${packageCellOutpoint.index} not found in transaction ${packageCellOutpoint.txHash}`,
     );
   }
   if (!packageCell.type) {
     throw new Error(
-      `No type script found in output index ${cellOutpoint.index} of transaction ${cellOutpoint.txHash}`,
+      `No type script found in output index ${packageCellOutpoint.index} of transaction ${packageCellOutpoint.txHash}`,
     );
   }
 
   const outputData =
-    tx.transaction.outputsData[parseInt(cellOutpoint.index, 16)];
+    tx.transaction.outputsData[parseInt(packageCellOutpoint.index, 16)];
   const packageData = PackageDataCodec.decode(outputData);
   console.log(`Package data: ${JSON.stringify(packageData)}`);
 
+  // Create a temporary directory for chunks to avoid polluting the output directory
+  const outputDir = path.dirname(normalizedOutputFilePath);
+  const tempDir = path.resolve(outputDir, "temp_chunks_" + Date.now());
+  fs.mkdirSync(tempDir, { recursive: true });
+
   // download all the cell deps
   const chunks: Chunk[] = [];
-  for (const cellDep of tx.transaction.cellDeps) {
-    const cell = await client.getCellLive(cellDep.outPoint, true);
-    if (!cell) {
-      continue;
+  try {
+    for (const cellDep of tx.transaction.cellDeps) {
+      const cell = await client.getCellLive(cellDep.outPoint, true);
+      if (!cell) {
+        continue;
+      }
+
+      const hash = hashCkb(bytesFrom(cell.outputData));
+      const chunk = packageData.chunks.find((c) => c.hash === hash);
+      if (chunk) {
+        // write the cell.outputData to a temporary chunk file
+        const chunkPath = path.join(
+          tempDir,
+          `chunk${String(chunk.index + 1).padStart(3, "0")}`,
+        );
+        fs.writeFileSync(chunkPath, bytesFrom(cell.outputData));
+        chunks.push({ ...chunk, ...{ path: chunkPath } });
+      }
     }
-    const hash = hashCkb(bytesFrom(cell.outputData));
-    const chunk = packageData.chunks.find((c) => c.hash === hash);
-    if (chunk) {
-      // write the cell.outputData to a file first
-      const chunkPath = `${normalizedOutputPath}.chunk${String(chunk.index + 1).padStart(3, "0")}`;
-      fs.writeFileSync(chunkPath, bytesFrom(cell.outputData));
-      chunks.push({ ...chunk, ...{ path: chunkPath } });
+
+    const mergedFilePath = await mergeChunks(
+      chunks,
+      packageData.hash,
+      normalizedOutputFilePath,
+    );
+
+    return mergedFilePath;
+  } finally {
+    // Clean up temporary directory and all chunk files
+    try {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    } catch (error) {
+      // Ignore cleanup errors
+      console.warn(`Failed to cleanup temporary directory: ${tempDir}`);
     }
   }
-
-  const mergedPath = await mergeChunks(
-    chunks,
-    packageData.hash,
-    normalizedOutputPath,
-  );
-  return mergedPath;
 }

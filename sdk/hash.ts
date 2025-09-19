@@ -8,9 +8,5 @@ export const sha256Hash: HashFunction = (data: Buffer): string => {
 };
 
 export const ckbBlake2bHash: HashFunction = (data: Buffer): string => {
-  const hash = hashCkb(data);
-  // hashCkb returns a hex string, possibly with 0x prefix
-  return typeof hash === "string" && hash.startsWith("0x")
-    ? hash.slice(2)
-    : hash;
+  return hashCkb(data).slice(2);
 };

@@ -17,36 +17,36 @@ export interface FileChunks {
 
 /**
  * Chunks a file into smaller pieces of specified size and computes its hash.
- * @param filePath Path to the file to chunk
+ * @param inputFile Path to the file to chunk
  * @param outputDir Directory to save the chunks
  * @param chunkSize Size of each chunk in bytes (default 300KB)
  * @param hashFn Optional hash function (default: ckbBlake2bHash)
  * @returns Object with array of chunk objects (each with path, hash, and index) and the overall file hash
  */
 export async function chunkFile(
-  filePath: string,
+  inputFile: string,
   outputDir: string,
   chunkSize: number = 300 * 1024,
   hashFn: HashFunction = ckbBlake2bHash,
 ): Promise<FileChunks> {
-  const normalizedFilePath = normalizePath(filePath);
-  const normalizedOutputDir = normalizePath(outputDir);
+  const normalizedInputFilePath = normalizePath(inputFile);
   const fileName = path.basename(
-    normalizedFilePath,
-    path.extname(normalizedFilePath),
+    normalizedInputFilePath,
+    path.extname(normalizedInputFilePath),
   );
   const allData: Buffer[] = [];
   const chunks: Array<Chunk> = [];
 
   // Ensure output directory exists
+  const normalizedOutputDir = normalizePath(outputDir);
   await fs.promises.mkdir(normalizedOutputDir, { recursive: true });
 
-  const input = fs.createReadStream(normalizedFilePath);
+  const inputReadStream = fs.createReadStream(normalizedInputFilePath);
   let chunkIndex = 0;
   let currentChunk: Buffer[] = [];
   let currentSize = 0;
 
-  for await (const chunk of input) {
+  for await (const chunk of inputReadStream) {
     allData.push(chunk);
     currentChunk.push(chunk);
     currentSize += chunk.length;
@@ -88,7 +88,7 @@ export async function chunkFile(
  * Merges chunks back into the original file and validates the hash.
  * @param chunks Array of chunk objects with path, hash, and index
  * @param expectedHash The expected hash of the merged file
- * @param outputPath Path where to save the merged file
+ * @param outputFilePath Path where to save the merged file
  * @param hashFn Optional hash function (default: SHA256)
  * @returns Path to the merged file
  * @throws Error if hash validation fails
@@ -96,10 +96,14 @@ export async function chunkFile(
 export async function mergeChunks(
   chunks: Array<Chunk>,
   expectedHash: string,
-  outputPath: string,
+  outputFilePath: string,
   hashFn: HashFunction = ckbBlake2bHash,
 ): Promise<string> {
-  const normalizedOutputPath = normalizePath(outputPath);
+  // Ensure output directory exists
+  const normalizedOutputPath = normalizePath(outputFilePath);
+  await fs.promises.mkdir(path.dirname(normalizedOutputPath), {
+    recursive: true,
+  });
   const output = fs.createWriteStream(normalizedOutputPath);
 
   // Sort chunks by their index to ensure correct order

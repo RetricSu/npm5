@@ -13,10 +13,10 @@ export interface BundleResult {
 }
 
 export async function bundlePackage(
-  packagePath: string,
-  outputPath?: string,
+  packageFolderPath: string,
+  outputDir?: string,
 ): Promise<BundleResult> {
-  const pkgRoot = normalizePath(packagePath); // 要发布的目录
+  const pkgRoot = normalizePath(packageFolderPath); // 要发布的目录
   const pkgJson = JSON.parse(
     fs.readFileSync(`${pkgRoot}/package.json`, "utf8"),
   );
@@ -29,8 +29,10 @@ export async function bundlePackage(
 
   // 2. 把列表打成 tar → gzip
   const tgzName = `${pkgJson.name}-${pkgJson.version}.tgz`;
-  const outputDir = outputPath ? normalizePath(outputPath) : pkgRoot;
-  const fullPath = path.join(outputDir, tgzName);
+  const outputDirectory = outputDir ? normalizePath(outputDir) : pkgRoot;
+  const fullPath = path.join(outputDirectory, tgzName);
+  // Ensure output directory exists
+  await fs.promises.mkdir(outputDirectory, { recursive: true });
   await tar.create(
     {
       file: fullPath,
@@ -50,26 +52,28 @@ export async function bundlePackage(
 }
 
 export async function unbundlePackage(
-  tgzPath: string,
-  outputPath?: string,
+  tgzFile: string,
+  outputDir?: string,
 ): Promise<string> {
-  const outputDir = outputPath ? normalizePath(outputPath) : process.cwd();
+  // Ensure output directory exists
+  const outputDirectory = outputDir ? normalizePath(outputDir) : process.cwd();
+  await fs.promises.mkdir(outputDirectory, { recursive: true });
 
   await tar.extract({
-    file: normalizePath(tgzPath),
-    cwd: outputDir,
+    file: normalizePath(tgzFile),
+    cwd: outputDirectory,
     gzip: true,
   });
 
   // Find the extracted directory (the one created by the tar prefix)
-  const items = fs.readdirSync(outputDir, { withFileTypes: true });
+  const items = fs.readdirSync(outputDirectory, { withFileTypes: true });
   const extractedDirs = items
     .filter((item) => item.isDirectory())
     .map((item) => item.name);
 
   // Assuming the tar creates one main directory
   if (extractedDirs.length === 1) {
-    const fullPath = path.join(outputDir, extractedDirs[0]);
+    const fullPath = path.join(outputDirectory, extractedDirs[0]);
     return path.relative(process.cwd(), fullPath);
   } else if (extractedDirs.length > 1) {
     // If multiple, try to find one that looks like a package name
@@ -77,11 +81,11 @@ export async function unbundlePackage(
       (dir) => !dir.startsWith(".") && dir !== "node_modules",
     );
     const fullPath = packageDir
-      ? path.join(outputDir, packageDir)
-      : path.join(outputDir, extractedDirs[0]);
+      ? path.join(outputDirectory, packageDir)
+      : path.join(outputDirectory, extractedDirs[0]);
     return path.relative(process.cwd(), fullPath);
   }
 
   // If no directory, return the outputDir (though unlikely)
-  return path.relative(process.cwd(), outputDir);
+  return path.relative(process.cwd(), outputDirectory);
 }

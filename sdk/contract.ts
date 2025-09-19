@@ -12,11 +12,14 @@ import {
   Hex,
   hexFrom,
 } from "@ckb-ccc/core";
-import { bundlePackage } from "../sdk/bundle";
+import { bundlePackage, unbundlePackage } from "../sdk/bundle";
 import { chunkFile } from "../sdk/chunk";
-import { publishChunks } from "../sdk/registry";
+import { downloadAndMergeChunks, publishChunks } from "../sdk/registry";
 import systemScripts from "../deployment/system-scripts.json";
 import scripts from "../deployment/scripts.json";
+import { normalizePath } from "./util";
+import path from "path";
+import fs from "fs";
 
 export class PackageContract {
   private data: PackageData;
@@ -36,18 +39,19 @@ export class PackageContract {
     this.chunkCells = chunkCells;
   }
 
-  static async fromBuildChunkCell(
-    jsPackagePath: string,
+  static async buildFromPublishingChunkCells(
+    packageFolderPath: string,
     signer: ccc.Signer,
-    outputPath = "./",
+    outputDir = "./",
+    chunkSize = 300 * 1024, // 300 KB
   ): Promise<PackageContract> {
     const {
       zipFilePath: tgzPath,
       name,
       version,
-    } = await bundlePackage(jsPackagePath, outputPath);
-    const chunkDir = `${outputPath}/chunks`;
-    const { chunks, hash } = await chunkFile(tgzPath, chunkDir, 300 * 1024);
+    } = await bundlePackage(packageFolderPath, outputDir);
+    const chunkDir = `${outputDir}/chunks`;
+    const { chunks, hash } = await chunkFile(tgzPath, chunkDir, chunkSize);
 
     const signerLock = (await signer.getRecommendedAddressObj()).script;
     const toLock = {
@@ -56,8 +60,6 @@ export class PackageContract {
       args: signerLock.args,
     };
     const chunkCells = await publishChunks(chunks, toLock, signer);
-
-    console.log(`Package name: ${name}, version: ${version}`);
 
     const packageData: PackageDataLike = {
       name: encodeUtf8ToBytes20(name),
@@ -70,6 +72,30 @@ export class PackageContract {
     };
 
     return new PackageContract(packageData, chunkCells);
+  }
+
+  static async downloadPackage(
+    packageCellOutpoint: {
+      txHash: Hex;
+      index: Hex;
+    },
+    outputDir: string,
+    client: ccc.Client,
+  ): Promise<string> {
+    // Create a temporary directory for mergedFile to avoid polluting the output directory
+    const normalizedOutputDir = normalizePath(outputDir);
+    const tempFile = path.resolve(
+      normalizedOutputDir,
+      ".mergedFile" + Date.now(),
+    );
+    const mergedFile = await downloadAndMergeChunks(
+      packageCellOutpoint,
+      tempFile,
+      client,
+    );
+    
+    const unbundlePath = await unbundlePackage(mergedFile, outputDir);
+    return unbundlePath;
   }
 
   async buildCreatePackageCellTransaction(
