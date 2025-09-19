@@ -2,6 +2,7 @@
   "name": "npm5",
   "version": "0.1.0",
   "description": "CKB JavaScript Smart Contract project",
+  "type": "module",
   "bin": {
     "npm5": "./build/tool/cli.js"
   },

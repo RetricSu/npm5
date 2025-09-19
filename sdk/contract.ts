@@ -157,6 +157,10 @@ export class PackageContract {
         typeId.slice(2),
     );
 
+    console.log(
+      `Package Type ID: ${typeId}, Type Hash: ${tx.outputs[0].type!.hash()}`,
+    );
+
     return tx;
   }
 }
