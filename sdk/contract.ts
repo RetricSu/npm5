@@ -1,70 +1,137 @@
-import { PackageDataLike, ChunkLike } from "./type";
-import { Hex } from "@ckb-ccc/core";
+import {
+  PackageDataLike,
+  PackageData,
+  PackageDataCodec,
+  encodeUtf8ToBytes20,
+} from "./type";
+import {
+  ccc,
+  CellDepLike,
+  hashTypeId,
+  hashTypeToBytes,
+  Hex,
+  hexFrom,
+} from "@ckb-ccc/core";
+import { bundlePackage } from "../sdk/bundle";
+import { chunkFile } from "../sdk/chunk";
+import { publishChunks } from "../sdk/registry";
+import systemScripts from "../deployment/system-scripts.json";
+import scripts from "../deployment/scripts.json";
 
-export class PackageDataBuilder {
-  private data: PackageDataLike;
-
-  constructor() {
-    this.data = {
-      name: "0x" + "0".repeat(40),
-      version: "0x" + "0".repeat(40),
-      hash: "0x" + "0".repeat(40),
-      chunks: [],
+export class PackageContract {
+  private data: PackageData;
+  private chunkCells: {
+    txHash: Hex;
+    chunk: {
+      path: string;
+      hash: string;
     };
+  }[] = [];
+
+  constructor(
+    data: PackageDataLike,
+    chunkCells: { txHash: Hex; chunk: { path: string; hash: string } }[] = [],
+  ) {
+    this.data = PackageDataCodec.decode(PackageDataCodec.encode(data));
+    this.chunkCells = chunkCells;
   }
 
-  static from(chunks: ChunkLike[], hash: Hex, name?: Hex, version?: Hex) {
-    const builder = new PackageDataBuilder();
-    builder.setHash(hash);
-    chunks.forEach((chunk) => builder.addChunk(chunk));
-    if (name) {
-      builder.setName(name);
-    }
-    if (version) {
-      builder.setVersion(version);
-    }
-    return builder;
+  static async fromBuildChunkCell(
+    jsPackagePath: string,
+    signer: ccc.Signer,
+    outputPath = "./",
+  ): Promise<PackageContract> {
+    const {
+      zipFilePath: tgzPath,
+      name,
+      version,
+    } = await bundlePackage(jsPackagePath, outputPath);
+    const chunkDir = `${outputPath}/chunks`;
+    const { chunks, hash } = await chunkFile(tgzPath, chunkDir, 300 * 1024);
+
+    const signerLock = (await signer.getRecommendedAddressObj()).script;
+    const toLock = {
+      codeHash: signerLock.codeHash,
+      hashType: signerLock.hashType,
+      args: signerLock.args,
+    };
+    const chunkCells = await publishChunks(chunks, toLock, signer);
+
+    console.log(`Package name: ${name}, version: ${version}`);
+
+    const packageData: PackageDataLike = {
+      name: encodeUtf8ToBytes20(name),
+      version: encodeUtf8ToBytes20(version),
+      hash: "0x" + hash.slice(0, 40),
+      chunks: chunks.map((c, i) => ({
+        hash: "0x" + c.hash,
+        index: i,
+      })),
+    };
+
+    return new PackageContract(packageData, chunkCells);
   }
 
-  setName(name: string) {
-    if (!/^0x[0-9a-fA-F]{40}$/.test(name)) {
-      throw new Error("Name must be a 20-byte hex string prefixed with 0x");
-    }
-    this.data.name = name;
-    return this;
-  }
+  async buildCreatePackageCellTransaction(
+    signer: ccc.Signer,
+  ): Promise<ccc.Transaction> {
+    const ckbJsVmScript = systemScripts.devnet["ckb_js_vm"];
+    const contractScript = scripts.devnet["package.bc"];
 
-  setVersion(version: string) {
-    if (!/^0x[0-9a-fA-F]{40}$/.test(version)) {
-      throw new Error("Version must be a 20-byte hex string prefixed with 0x");
-    }
-    this.data.version = version;
-    return this;
-  }
+    const mainScript = {
+      codeHash: ckbJsVmScript.script.codeHash,
+      hashType: ckbJsVmScript.script.hashType,
+      args: hexFrom(
+        "0x0000" +
+          contractScript.codeHash.slice(2) +
+          hexFrom(hashTypeToBytes(contractScript.hashType)).slice(2) +
+          "0000000000000000000000000000000000000000000000000000000000000000",
+      ),
+    };
 
-  setHash(hash: string) {
-    if (!/^0x[0-9a-fA-F]{40}$/.test(hash)) {
-      throw new Error("Hash must be a 20-byte hex string prefixed with 0x");
-    }
-    this.data.hash = hash;
-    return this;
-  }
+    const signerLock = (await signer.getRecommendedAddressObj()).script;
+    const toLock = {
+      codeHash: signerLock.codeHash,
+      hashType: signerLock.hashType,
+      args: signerLock.args,
+    };
 
-  addChunk(chunk: ChunkLike) {
-    if (!/^0x[0-9a-fA-F]{40}$/.test(chunk.hash)) {
-      throw new Error(
-        "Chunk hash must be a 20-byte hex string prefixed with 0x",
-      );
-    }
-    const index = Number(chunk.index);
-    if (!Number.isInteger(index) || index < 0 || index > 0xffffffff) {
-      throw new Error("Chunk index must be a valid u32 number");
-    }
-    this.data.chunks.push({ hash: chunk.hash, index });
-    return this;
-  }
+    const data = PackageDataCodec.encode(this.data);
 
-  build(): PackageDataLike {
-    return this.data;
+    // compose transaction
+    const tx = ccc.Transaction.from({
+      outputs: [
+        {
+          lock: toLock,
+          type: mainScript,
+        },
+      ],
+      outputsData: [data],
+      cellDeps: [
+        ...ckbJsVmScript.script.cellDeps.map((c) => c.cellDep),
+        ...contractScript.cellDeps.map((c) => c.cellDep),
+        ...this.chunkCells.flatMap((r) => {
+          const cellDep: CellDepLike = {
+            outPoint: {
+              txHash: r.txHash,
+              index: "0x0",
+            },
+            depType: "code",
+          };
+          return cellDep;
+        }),
+      ],
+    });
+
+    await tx.completeInputsAll(signer);
+    const typeId = hashTypeId(tx.inputs[0], 0);
+    tx.outputs[0].type!.args = hexFrom(
+      "0x0000" +
+        contractScript.codeHash.slice(2) +
+        hexFrom(hashTypeToBytes(contractScript.hashType)).slice(2) +
+        typeId.slice(2),
+    );
+
+    return tx;
   }
 }

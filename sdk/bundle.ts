@@ -6,10 +6,16 @@ import { normalizePath } from "./util";
 const tar = require("tar");
 const Arborist = require("@npmcli/arborist");
 
+export interface BundleResult {
+  zipFilePath: string;
+  name: string;
+  version: string;
+}
+
 export async function bundlePackage(
   packagePath: string,
   outputPath?: string,
-): Promise<string> {
+): Promise<BundleResult> {
   const pkgRoot = normalizePath(packagePath); // 要发布的目录
   const pkgJson = JSON.parse(
     fs.readFileSync(`${pkgRoot}/package.json`, "utf8"),
@@ -36,7 +42,11 @@ export async function bundlePackage(
     files,
   );
 
-  return fullPath;
+  return {
+    zipFilePath: fullPath,
+    name: pkgJson.name,
+    version: pkgJson.version,
+  };
 }
 
 export async function unbundlePackage(

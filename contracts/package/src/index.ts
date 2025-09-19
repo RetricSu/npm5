@@ -1,5 +1,5 @@
 import * as bindings from "@ckb-js-std/bindings";
-import { hashCkb, HighLevel, log } from "@ckb-js-std/core";
+import { HighLevel, log } from "@ckb-js-std/core";
 import { PackageDataCodec } from "./type";
 
 function main(): number {
@@ -8,55 +8,39 @@ function main(): number {
   // The args is the type id.
   // the actual code is stored in other cells by locating them with the code-hash
 
+  // 1. check type id
   HighLevel.checkTypeId(35);
 
   const data = HighLevel.loadCellData(0, HighLevel.SOURCE_GROUP_OUTPUT);
   const packageData = PackageDataCodec.decode(data);
   log.debug(`package data: ${JSON.stringify(packageData)}`);
 
-  const transaction = HighLevel.loadTransaction();
-  const cellDepsLength = transaction.cellDeps.length;
-
-  // check cellDeps code hash matches with the chunk hash
+  // 2. check cellDeps code hash matches with the chunk hash for data availability
   for (const chunk of packageData.chunks) {
     const idx = +chunk.index;
     log.debug(`checking chunk index: ${idx}`);
 
-    // iterate all cell deps to find the matching one
-    let found = false;
-    for (let i = 0; i < cellDepsLength; i++) {
-      try {
-        const depCellData = HighLevel.loadCellData(
-          i,
-          HighLevel.SOURCE_CELL_DEP,
-        );
-        if (depCellData) {
-          const hash = bindings.hex.encode(hashCkb(depCellData)).slice(0, 40); // first 20 bytes
-          log.debug(`calculated chunk hash: ${hash} for cell dep ${i}`);
-          if (hash === chunk.hash) {
-            found = true;
-            log.debug(
-              `found matching chunk hash: ${hash} for index ${chunk.index} in cell dep index ${i}`,
-            );
-            break;
-          }
-        }
-      } catch (error) {
-        log.debug(
-          `failed to load dep cell data ${i}: ${(error as Error).message}, skipping...`,
-        );
-      }
-    }
-    if (!found) {
-      log.error(
-        `no matching chunk hash: ${chunk.hash} for chunk index ${chunk.index} found in all cell deps`,
-      );
+    let found = HighLevel.findCellByDataHash(
+      bindings.hex.decode(chunk.hash),
+      HighLevel.SOURCE_CELL_DEP,
+    );
+    if (found === null) {
+      log.error(`chunk with hash ${chunk.hash} not found in cell deps`);
       return 1;
+    } else {
+      log.debug(`found chunk ${idx} in cell deps ${found}`);
     }
   }
 
-  // todo: check full file hash
+  // 3. check the data integrity
+  // todo: we can't check the full file hash since loading all the chunks and concat them might overflow the memory
+  // Instead, we can compute a merkle root hash from the chunk hashes and validate it here.
+  // For now we just do nothing with the hash
 
+  // 4. check the package name and version
+  // todo: name should not be changed after created
+  // version should follow semver
+  // For now, we just do nothing
   return 0;
 }
 

@@ -1,6 +1,17 @@
 import fs from "fs";
 import { normalizePath } from "./util";
-import { Transaction, Signer, hexFrom, ScriptLike, Hex } from "@ckb-ccc/core";
+import {
+  Transaction,
+  Signer,
+  hexFrom,
+  ScriptLike,
+  Hex,
+  ccc,
+  bytesFrom,
+  hashCkb,
+} from "@ckb-ccc/core";
+import { PackageDataCodec } from "./type";
+import { Chunk, mergeChunks } from "./chunk";
 
 /**
  * Publish chunks to CKB by creating cells
@@ -59,29 +70,53 @@ export async function prepareChunksData(
  * @returns Path to the reconstructed file
  */
 export async function downloadChunks(
-  txHash: string,
+  cellOutpoint: { txHash: Hex; index: string },
   outputPath: string,
-  client: any, // TODO: Use proper Client type
+  client: ccc.Client,
 ): Promise<string> {
   const normalizedOutputPath = normalizePath(outputPath);
-  const output = fs.createWriteStream(normalizedOutputPath);
+  const tx = await client.getTransaction(cellOutpoint.txHash);
+  if (!tx) {
+    throw new Error(`Transaction ${cellOutpoint.txHash} not found`);
+  }
+  const packageCell = tx.transaction.outputs[parseInt(cellOutpoint.index, 16)];
+  if (!packageCell) {
+    throw new Error(
+      `Output index ${cellOutpoint.index} not found in transaction ${cellOutpoint.txHash}`,
+    );
+  }
+  if (!packageCell.type) {
+    throw new Error(
+      `No type script found in output index ${cellOutpoint.index} of transaction ${cellOutpoint.txHash}`,
+    );
+  }
 
-  // TODO: Query CKB to get cell data
-  // Example:
-  // const tx = await client.getTransaction(txHash);
-  // for (const outputData of tx.transaction.outputsData) {
-  //   const cellData = Buffer.from(outputData, 'hex');
-  //   output.write(cellData);
-  // }
+  const outputData =
+    tx.transaction.outputsData[parseInt(cellOutpoint.index, 16)];
+  const packageData = PackageDataCodec.decode(outputData);
+  console.log(`Package data: ${JSON.stringify(packageData)}`);
 
-  console.log(`Would download chunks from transaction ${txHash}`);
+  // download all the cell deps
+  const chunks: Chunk[] = [];
+  for (const cellDep of tx.transaction.cellDeps) {
+    const cell = await client.getCellLive(cellDep.outPoint, true);
+    if (!cell) {
+      continue;
+    }
+    const hash = hashCkb(bytesFrom(cell.outputData)).slice(2, 42);
+    const chunk = packageData.chunks.find((c) => c.hash === hash);
+    if (chunk) {
+      // write the cell.outputData to a file first
+      const chunkPath = `${normalizedOutputPath}.chunk${String(chunk.index + 1).padStart(3, "0")}`;
+      fs.writeFileSync(chunkPath, bytesFrom(cell.outputData));
+      chunks.push({ ...chunk, ...{ path: chunkPath } });
+    }
+  }
 
-  // Placeholder: create empty file for now
-  output.end();
-  await new Promise<void>((resolve, reject) => {
-    output.on("finish", () => resolve());
-    output.on("error", reject);
-  });
-
-  return normalizedOutputPath;
+  const mergedPath = await mergeChunks(
+    chunks,
+    packageData.hash,
+    normalizedOutputPath,
+  );
+  return mergedPath;
 }

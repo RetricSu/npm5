@@ -8,10 +8,15 @@ import {
 import scripts from "../deployment/scripts.json";
 import systemScripts from "../deployment/system-scripts.json";
 import { buildClient, buildSigner } from "./helper";
-import { bundlePackage } from "../sdk/bundle";
+import { bundlePackage, unbundlePackage } from "../sdk/bundle";
 import { chunkFile } from "../sdk/chunk";
-import { publishChunks } from "../sdk/registry";
-import { PackageDataCodec, PackageDataLike } from "../sdk/type";
+import { downloadChunks, publishChunks } from "../sdk/registry";
+import {
+  encodeUtf8ToBytes20,
+  PackageDataCodec,
+  PackageDataLike,
+} from "../sdk/type";
+import { PackageContract } from "../sdk/contract";
 
 describe("package contract devnet", () => {
   let client: ccc.Client;
@@ -47,18 +52,22 @@ describe("package contract devnet", () => {
 
     const input = "./node_modules/ckb-testtool";
     const output = "./";
-    const tgzPath = await bundlePackage(input, output);
+    const {
+      zipFilePath: tgzPath,
+      name,
+      version,
+    } = await bundlePackage(input, output);
     const chunkDir = `${output}/chunks`;
-    const { chunks, hash } = await chunkFile(tgzPath, chunkDir, 50 * 1024);
+    const { chunks, hash } = await chunkFile(tgzPath, chunkDir, 300 * 1024);
     const publishResult = await publishChunks(chunks, toLock, signer);
     console.log("Publish result:", publishResult);
 
     const packageData: PackageDataLike = {
-      name: "0x" + "d".repeat(40),
-      version: "0x" + "e".repeat(40),
+      name: encodeUtf8ToBytes20(name),
+      version: encodeUtf8ToBytes20(version),
       hash: "0x" + hash.slice(0, 40),
       chunks: chunks.map((c, i) => ({
-        hash: "0x" + c.hash.slice(0, 40),
+        hash: "0x" + c.hash,
         index: i,
       })),
     };
@@ -102,4 +111,35 @@ describe("package contract devnet", () => {
     const txHash = await signer.sendTransaction(tx);
     console.log(`Transaction sent: ${txHash}`);
   }, 60000);
+
+  test("Package Contract Class", async () => {
+    const input = "./node_modules/ckb-testtool";
+    const contract = await PackageContract.fromBuildChunkCell(input, signer);
+    const tx = await contract.buildCreatePackageCellTransaction(signer);
+    await tx.completeFeeBy(signer, 1000);
+    const txHash = await signer.sendTransaction(tx);
+    console.log(`Transaction sent: ${txHash}`);
+
+    const mergedPath = `./download/package`;
+    const downloadPath = await downloadChunks(
+      { txHash, index: "0x0" },
+      mergedPath,
+      client,
+    );
+    expect(downloadPath).toBeDefined();
+  }, 60000);
+
+  test("should download package", async () => {
+    const txHash =
+      "0x3b98940d2323e8570be6172db2dcf99e2655c44cae853750d5c515ec698f06ed";
+    const mergedPath = `./download.tgz`;
+    const downloadPath = await downloadChunks(
+      { txHash, index: "0x0" },
+      mergedPath,
+      client,
+    );
+    expect(downloadPath).toBeDefined();
+
+    unbundlePackage(mergedPath, "./download");
+  }, 20000);
 });

@@ -1,6 +1,6 @@
 import { bundlePackage, unbundlePackage } from "../sdk/bundle";
 import { chunkFile, mergeChunks } from "../sdk/chunk";
-import { publishChunks } from "../sdk/registry";
+import { downloadChunks, publishChunks } from "../sdk/registry";
 import { buildClient, buildSigner } from "./helper";
 import ccc from "@ckb-ccc/core";
 
@@ -8,7 +8,7 @@ describe("package contract", () => {
   test("should execute successfully", async () => {
     const input = "~/Desktop/offckb-placeholder";
     const output = "~/Desktop/npm5/test-package";
-    const tgzPath = await bundlePackage(input, output);
+    const { zipFilePath: tgzPath } = await bundlePackage(input, output);
 
     await unbundlePackage(tgzPath, output);
   });
@@ -18,7 +18,7 @@ describe("file chunking", () => {
   test("should chunk and merge file successfully", async () => {
     const input = "./node_modules/ckb-testtool";
     const output = "./";
-    const tgzPath = await bundlePackage(input, output);
+    const { zipFilePath: tgzPath } = await bundlePackage(input, output);
     const chunkDir = `${output}/chunks`;
     const mergedPath = `${output}/merged.tgz`;
 
@@ -59,7 +59,7 @@ describe("CKB registry", () => {
   test("should publish chunks", async () => {
     const input = "./node_modules/ckb-testtool";
     const output = "./";
-    const tgzPath = await bundlePackage(input, output);
+    const { zipFilePath: tgzPath } = await bundlePackage(input, output);
     const chunkDir = `${output}/chunks`;
 
     const { chunks, hash } = await chunkFile(tgzPath, chunkDir, 500 * 1024);

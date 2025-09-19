@@ -1,13 +1,13 @@
 {
   "devnet": {
     "package.bc": {
-      "codeHash": "0xcead33b98de7645dd330d7446e22a59ac58674ca1eb9f40b526cc7e2f57d29e2",
+      "codeHash": "0x6b6bed900c41dec333953bf5992217e8aa6e48c56c5f8e6b1bb39875317b0155",
       "hashType": "data1",
       "cellDeps": [
         {
           "cellDep": {
             "outPoint": {
-              "txHash": "0x7fafe297c7d41ec21eb133dd7c736b335cae3c1a5d2ecb4ac27707dfd845cd85",
+              "txHash": "0x6b6596870fabff6d465804d8f51e830d5fd85ce42f138dea5043fd46c3bf4b57",
               "index": 0
             },
             "depType": "code"

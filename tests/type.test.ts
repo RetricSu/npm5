@@ -4,6 +4,8 @@ import {
   PackageDataCodec,
   ChunkLike,
   PackageDataLike,
+  encodeUtf8ToBytes20,
+  decodeBytes20ToUtf8,
 } from "../sdk/type";
 
 describe("Bytes20Codec", () => {
@@ -12,6 +14,16 @@ describe("Bytes20Codec", () => {
     const encoded = Bytes20Codec.encode(originalHex);
     const decoded = Bytes20Codec.decode(encoded);
     expect(decoded).toBe(originalHex);
+  });
+});
+
+describe("Utf8 to Bytes20 encoding", () => {
+  it("should encode a UTF-8 string to a 20-byte hex string", () => {
+    const originalStr = "Hello, World!";
+    const encoded = encodeUtf8ToBytes20(originalStr);
+    expect(encoded).toMatch(/^0x[a-f0-9]{40}$/); // Check if it's a valid 20-byte hex
+    const decodedStr = decodeBytes20ToUtf8(encoded);
+    expect(decodedStr).toBe(originalStr);
   });
 });
 

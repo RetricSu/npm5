@@ -9,18 +9,24 @@ export const Bytes20Codec: mol.Codec<string, Hex> = mol.Codec.from({
   decode: (bytes: BytesLike) => bindings.hex.encode(bytes) as Hex,
 });
 
+export const Bytes32Codec: mol.Codec<string, Hex> = mol.Codec.from({
+  byteLength: 32,
+  encode: (hex: string) => bindings.hex.decode(hex),
+  decode: (bytes: BytesLike) => bindings.hex.encode(bytes) as Hex,
+});
+
 export interface Chunk {
-  hash: string; // 20 bytes
+  hash: string; // 32 bytes
   index: number; // 4 bytes, u32
 }
 
 export interface ChunkLike {
-  hash: string; // 20 bytes
+  hash: string; // 32 bytes
   index: NumLike; // 4 bytes, u32
 }
 
 export const ChunkCodec: mol.Codec<ChunkLike, Chunk> = mol.table({
-  hash: Bytes20Codec,
+  hash: Bytes32Codec,
   index: mol.Uint32,
 });
 
