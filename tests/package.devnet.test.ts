@@ -131,7 +131,7 @@ describe("package contract devnet", () => {
 
   test("should download package", async () => {
     const txHash =
-      "0x3b98940d2323e8570be6172db2dcf99e2655c44cae853750d5c515ec698f06ed";
+      "0xa7771fd7d7b7e7e27aa13bb46d12f5071cc4ce398c23e20a5a1df5388965157a";
     const mergedPath = `./download.tgz`;
     const downloadPath = await downloadChunks(
       { txHash, index: "0x0" },
@@ -140,6 +140,7 @@ describe("package contract devnet", () => {
     );
     expect(downloadPath).toBeDefined();
 
-    unbundlePackage(mergedPath, "./download");
+    const unbundlePath = await unbundlePackage(mergedPath, "./download");
+    expect(unbundlePath).toBeDefined();
   }, 20000);
 });

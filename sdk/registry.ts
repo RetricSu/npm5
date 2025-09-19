@@ -103,7 +103,7 @@ export async function downloadChunks(
     if (!cell) {
       continue;
     }
-    const hash = hashCkb(bytesFrom(cell.outputData)).slice(2, 42);
+    const hash = hashCkb(bytesFrom(cell.outputData));
     const chunk = packageData.chunks.find((c) => c.hash === hash);
     if (chunk) {
       // write the cell.outputData to a file first

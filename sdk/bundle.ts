@@ -35,9 +35,9 @@ export async function bundlePackage(
     {
       file: fullPath,
       cwd: pkgRoot,
-      gzip: true, // 直接 gzip
+      gzip: true,
       portable: true,
-      prefix: "package", // npm 约定顶层文件夹叫 package
+      prefix: pkgJson.name, // Use package name as prefix to mimic npm behavior
     },
     files,
   );
@@ -54,11 +54,34 @@ export async function unbundlePackage(
   outputPath?: string,
 ): Promise<string> {
   const outputDir = outputPath ? normalizePath(outputPath) : process.cwd();
+
   await tar.extract({
     file: normalizePath(tgzPath),
     cwd: outputDir,
     gzip: true,
   });
-  // The extracted content will be in a 'package' subdirectory due to the prefix
-  return path.join(outputDir, "package");
+
+  // Find the extracted directory (the one created by the tar prefix)
+  const items = fs.readdirSync(outputDir, { withFileTypes: true });
+  const extractedDirs = items
+    .filter((item) => item.isDirectory())
+    .map((item) => item.name);
+
+  // Assuming the tar creates one main directory
+  if (extractedDirs.length === 1) {
+    const fullPath = path.join(outputDir, extractedDirs[0]);
+    return path.relative(process.cwd(), fullPath);
+  } else if (extractedDirs.length > 1) {
+    // If multiple, try to find one that looks like a package name
+    const packageDir = extractedDirs.find(
+      (dir) => !dir.startsWith(".") && dir !== "node_modules",
+    );
+    const fullPath = packageDir
+      ? path.join(outputDir, packageDir)
+      : path.join(outputDir, extractedDirs[0]);
+    return path.relative(process.cwd(), fullPath);
+  }
+
+  // If no directory, return the outputDir (though unlikely)
+  return path.relative(process.cwd(), outputDir);
 }

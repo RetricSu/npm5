@@ -1,6 +1,5 @@
 import fs from "fs";
 import path from "path";
-import crypto from "crypto";
 import { normalizePath } from "./util";
 import { HashFunction, ckbBlake2bHash } from "./hash";
 
@@ -111,7 +110,10 @@ export async function mergeChunks(
     const chunkData = await fs.promises.readFile(chunk.path);
     // Optional: verify individual chunk hash
     const chunkHash = hashFn(chunkData);
-    if (chunkHash !== chunk.hash) {
+    const expectedChunkHash = chunk.hash.startsWith("0x")
+      ? chunk.hash.slice(2)
+      : chunk.hash;
+    if (chunkHash !== expectedChunkHash) {
       throw new Error(`Chunk ${chunk.path} hash validation failed`);
     }
     allMergedData.push(chunkData);
@@ -125,12 +127,12 @@ export async function mergeChunks(
   });
 
   const actualHash = hashFn(Buffer.concat(allMergedData));
-  if (actualHash !== expectedHash) {
-    //throw new Error(
-    //  `Hash validation failed. Expected: ${expectedHash}, Got: ${actualHash}`,
-    //);
-    console.warn(
-      `Warning: Hash validation failed. Expected: ${expectedHash}, Got: ${actualHash}`,
+  const expectedHashNoPrefix = expectedHash.startsWith("0x")
+    ? expectedHash.slice(2)
+    : expectedHash;
+  if (actualHash.slice(0, 40) !== expectedHashNoPrefix) {
+    throw new Error(
+      `Hash validation failed. Expected: ${expectedHash}, Got: 0x${actualHash.slice(0, 40)}`,
     );
   }
 
