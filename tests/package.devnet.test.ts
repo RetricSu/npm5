@@ -45,11 +45,11 @@ describe("package contract devnet", () => {
       args: signerLock.args,
     };
 
-    const input = "~/Desktop/offckb-placeholder";
-    const output = "~/Desktop/npm5";
+    const input = "./node_modules/ckb-testtool";
+    const output = "./";
     const tgzPath = await bundlePackage(input, output);
     const chunkDir = `${output}/chunks`;
-    const { chunks, hash } = await chunkFile(tgzPath, chunkDir, 500 * 1024);
+    const { chunks, hash } = await chunkFile(tgzPath, chunkDir, 50 * 1024);
     const publishResult = await publishChunks(chunks, toLock, signer);
     console.log("Publish result:", publishResult);
 
@@ -101,5 +101,5 @@ describe("package contract devnet", () => {
     await tx.completeFeeBy(signer, 1000);
     const txHash = await signer.sendTransaction(tx);
     console.log(`Transaction sent: ${txHash}`);
-  });
+  }, 60000);
 });

@@ -16,8 +16,8 @@ describe("package contract", () => {
 
 describe("file chunking", () => {
   test("should chunk and merge file successfully", async () => {
-    const input = "~/Desktop/offckb-placeholder";
-    const output = "~/Desktop/npm5";
+    const input = "./node_modules/ckb-testtool";
+    const output = "./";
     const tgzPath = await bundlePackage(input, output);
     const chunkDir = `${output}/chunks`;
     const mergedPath = `${output}/merged.tgz`;
@@ -56,9 +56,9 @@ describe("CKB registry", () => {
     signer = buildSigner(client);
   });
 
-  test("should publish and download chunks", async () => {
-    const input = "~/Desktop/offckb-placeholder";
-    const output = "~/Desktop/npm5";
+  test("should publish chunks", async () => {
+    const input = "./node_modules/ckb-testtool";
+    const output = "./";
     const tgzPath = await bundlePackage(input, output);
     const chunkDir = `${output}/chunks`;
 
@@ -66,7 +66,5 @@ describe("CKB registry", () => {
     const toLock = (await signer.getRecommendedAddressObj()).script;
     const result = await publishChunks(chunks, toLock, signer);
     expect(result.length).toBe(chunks.length);
-
-    // Download chunks (placeholder implementation)
   }, 20000); // 20 second timeout
 });

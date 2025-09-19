@@ -43,13 +43,13 @@ function main(): number {
         }
       } catch (error) {
         log.debug(
-          `failed to load cell data for index ${i}: ${(error as Error).message}, skipping...`,
+          `failed to load dep cell data ${i}: ${(error as Error).message}, skipping...`,
         );
       }
     }
     if (!found) {
       log.error(
-        `no matching chunk hash: ${chunk.hash} for index ${chunk.index} found in cell deps`,
+        `no matching chunk hash: ${chunk.hash} for chunk index ${chunk.index} found in all cell deps`,
       );
       return 1;
     }
