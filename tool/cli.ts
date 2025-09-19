@@ -2,7 +2,8 @@
 
 import { Command } from "commander";
 import { ccc, hashTypeToBytes, hexFrom } from "@ckb-ccc/core";
-import { PackageContract } from "../sdk/contract.js";
+import { PackageContract } from "../sdk/contract";
+import { buildClient } from "../sdk/ccc";
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
@@ -16,7 +17,8 @@ program.name("npm5").description("CKB package manager").version("0.1.0");
 program
   .command("add <typeHash>")
   .description("Add a package by its type script hash")
-  .action(async (typeHash: string) => {
+  .option("-n, --network <network>", "CKB network", "devnet")
+  .action(async (typeHash: string, options: { network: string }) => {
     try {
       // Validate typeHash is 32 bytes (64 hex chars + 0x)
       if (!/^0x[0-9a-fA-F]{64}$/.test(typeHash)) {
@@ -24,18 +26,29 @@ program
           "Type hash must be a 32-byte hex string (0x followed by 64 hex characters)",
         );
       }
+      // validate network
+      if (!["devnet", "testnet", "mainnet"].includes(options.network)) {
+        throw new Error("Network must be one of: devnet, testnet, mainnet");
+      }
 
-      // Create client - default to devnet
-      const client = new ccc.ClientPublicTestnet();
+      const network = options.network as "devnet" | "testnet" | "mainnet";
+      console.log(`Using network: ${network}`);
 
-      const contractScript = scripts.devnet["package.bc"];
-      const argsPrefix = "0x0000" + contractScript.codeHash.slice(2) + hexFrom(hashTypeToBytes(contractScript.hashType)).slice(2);
+      const client = buildClient(network);
+      // @ts-ignore
+      const contractScript = scripts[network]["package.bc"];
+      const argsPrefix =
+        "0x0000" +
+        contractScript.codeHash.slice(2) +
+        hexFrom(hashTypeToBytes(contractScript.hashType)).slice(2);
 
       // Search for cells with type script prefix
       const cells = client.findCells({
         script: {
-          codeHash: systemScripts.devnet["ckb_js_vm"].script.codeHash,
-          hashType: systemScripts.devnet["ckb_js_vm"].script.hashType,
+          // @ts-ignore
+          codeHash: systemScripts[network]["ckb_js_vm"].script.codeHash,
+          // @ts-ignore
+          hashType: systemScripts[network]["ckb_js_vm"].script.hashType,
           args: argsPrefix,
         },
         scriptType: "type",

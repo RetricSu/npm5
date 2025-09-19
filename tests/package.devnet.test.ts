@@ -1,5 +1,6 @@
 import { ccc } from "@ckb-ccc/core";
-import { buildClient, buildSigner, compareFileTrees } from "./helper";
+import { compareFileTrees } from "../sdk/util";
+import { buildClient, buildSigner } from "../sdk/ccc";
 import { PackageContract } from "../sdk/contract";
 
 describe("package contract devnet", () => {
