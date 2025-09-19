@@ -103,7 +103,7 @@ program
       console.log(`Package: ${packageName}@${packageVersion}`);
 
       // Update package.json deps
-      const rootPackageJsonPath = path.resolve(__dirname, "../../package.json");
+      const rootPackageJsonPath = path.resolve(process.cwd(), "./package.json");
       const rootPackageJson = JSON.parse(
         fs.readFileSync(rootPackageJsonPath, "utf8"),
       );

@@ -3,6 +3,7 @@ import {
   PackageData,
   PackageDataCodec,
   encodeUtf8ToBytes20,
+  decodeBytes20ToUtf8,
 } from "./type";
 import {
   ccc,
@@ -87,13 +88,17 @@ export class PackageContract {
       normalizedOutputDir,
       ".mergedFile" + Date.now(),
     );
-    const mergedFile = await downloadAndMergeChunks(
-      packageCellOutpoint,
-      tempFile,
-      client,
-    );
+    const { mergedFilePath: mergedFile, packageData } =
+      await downloadAndMergeChunks(packageCellOutpoint, tempFile, client);
 
-    const unbundlePath = await unbundlePackage(mergedFile, outputDir);
+    await unbundlePackage(mergedFile, outputDir);
+
+    const packageName = decodeBytes20ToUtf8(packageData.name);
+    const packageVersion = decodeBytes20ToUtf8(packageData.version);
+
+    console.log(`Downloaded package: ${packageName}@${packageVersion}`);
+
+    const unbundlePath = path.join(normalizePath(outputDir), packageName);
     return unbundlePath;
   }
 

@@ -11,7 +11,7 @@ import {
   bytesFrom,
   hashCkb,
 } from "@ckb-ccc/core";
-import { PackageDataCodec } from "./type";
+import { PackageData, PackageDataCodec } from "./type";
 import { Chunk, mergeChunks } from "./chunk";
 
 /**
@@ -77,7 +77,7 @@ export async function downloadAndMergeChunks(
   packageCellOutpoint: { txHash: Hex; index: Hex },
   outputFile: string,
   client: ccc.Client,
-): Promise<string> {
+): Promise<{ mergedFilePath: string; packageData: PackageData }> {
   // Ensure output directory exists
   const normalizedOutputFilePath = normalizePath(outputFile);
   fs.mkdirSync(path.dirname(normalizedOutputFilePath), { recursive: true });
@@ -137,7 +137,7 @@ export async function downloadAndMergeChunks(
       normalizedOutputFilePath,
     );
 
-    return mergedFilePath;
+    return { mergedFilePath, packageData };
   } finally {
     // Clean up temporary directory and all chunk files
     try {

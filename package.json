@@ -12,7 +12,7 @@
     "test": "node scripts/build-all.js && jest",
     "add-contract": "node scripts/add-contract.js",
     "deploy": "node scripts/build-all.js && node scripts/deploy.js",
-    "build:cli": "esbuild --platform=node --minify --bundle tool/cli.ts --outfile=build/tool/cli.js",
+    "build:cli": "esbuild --platform=node --format=esm --banner:js=\"import { createRequire } from 'module'; import { fileURLToPath } from 'url'; const require = createRequire(import.meta.url); const __dirname = fileURLToPath(new URL('.', import.meta.url)); const __filename = fileURLToPath(import.meta.url);\" --minify --bundle tool/cli.ts --outfile=build/tool/cli.js",
     "format": "prettier --write .",
     "clean": "rimraf dist"
   },
