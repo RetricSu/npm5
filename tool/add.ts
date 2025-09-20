@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { execSync } from "child_process";
+import { tmpdir } from "os";
 import systemScripts from "../deployment/system-scripts.json";
 import scripts from "../deployment/scripts.json";
 import { readDependencies } from "./util";
@@ -12,7 +13,7 @@ import { readDependencies } from "./util";
 export async function add(
   typeHash: string,
   options: { network: string },
-  targetFolder: string,
+  targetFolder: string, // the folder that contains package.json
 ) {
   try {
     // Validate typeHash is 32 bytes (64 hex chars + 0x)
@@ -87,7 +88,7 @@ export async function add(
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
     // install the deps of the dep too
     const dependencies = await readDependencies(packageJson);
-    for (const dep of dependencies) {
+    for (const dep of dependencies.sort((a, b) => (a.isNpm5 ? -1 : 1))) {
       if (dep.isNpm5) {
         await add(dep.typeHash, options, targetFolder);
       } else {
@@ -140,8 +141,51 @@ export function addViaNpm(
   version: string,
   targetFolder: string,
 ) {
-  execSync(`npm add ${packageName}@${version}`, {
-    cwd: targetFolder,
-    stdio: "inherit",
-  });
+  // Create a temporary directory for npm install to avoid interfering with npm5 packages
+  const tempProjectDir = path.join(tmpdir(), `npm5-temp-${Date.now()}`);
+  fs.mkdirSync(tempProjectDir);
+
+  try {
+    // Create a temporary package.json
+    const tempPackageJson = {
+      name: "temp",
+      version: "1.0.0",
+      dependencies: {
+        [packageName]: version,
+      },
+    };
+    fs.writeFileSync(
+      path.join(tempProjectDir, "package.json"),
+      JSON.stringify(tempPackageJson, null, 2),
+    );
+
+    // Run npm install in temp dir
+    execSync(`npm install`, {
+      cwd: tempProjectDir,
+      stdio: "inherit",
+    });
+
+    // Copy the installed package to the target node_modules
+    const tempNodeModules = path.join(tempProjectDir, "node_modules");
+    const targetNodeModules = path.join(targetFolder, "node_modules");
+    if (!fs.existsSync(targetNodeModules)) {
+      fs.mkdirSync(targetNodeModules, { recursive: true });
+    }
+
+    const packageDir = path.join(tempNodeModules, packageName);
+    const targetPackageDir = path.join(targetNodeModules, packageName);
+    if (fs.existsSync(packageDir)) {
+      // Ensure parent directory exists
+      execSync(`mkdir -p "${path.dirname(targetPackageDir)}"`, {
+        stdio: "inherit",
+      });
+      // Use cp -r to copy
+      execSync(`cp -r "${packageDir}" "${targetPackageDir}"`, {
+        stdio: "inherit",
+      });
+    }
+  } finally {
+    // Clean up temp dir
+    execSync(`rm -rf "${tempProjectDir}"`, { stdio: "inherit" });
+  }
 }

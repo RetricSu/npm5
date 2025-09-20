@@ -11,10 +11,7 @@ export async function install(
     throw new Error("package.json Path does not exits.");
   }
 
-  const targetFolder = path.join(
-    path.dirname(packageJsonFilePath),
-    "node_modules",
-  );
+  const targetFolder = path.dirname(packageJsonFilePath);
   if (!fs.existsSync(targetFolder)) {
     fs.mkdirSync(targetFolder, { recursive: true });
   }
@@ -22,7 +19,10 @@ export async function install(
   const packageJson = JSON.parse(fs.readFileSync(packageJsonFilePath, "utf8"));
   // install the deps of the dep too
   const dependencies = await readDependencies(packageJson);
-  for (const dep of dependencies) {
+  console.log(
+    `Ready to install dependencies: ${JSON.stringify(dependencies, null, 2)}`,
+  );
+  for (const dep of dependencies.sort((a, b) => (a.isNpm5 ? -1 : 1))) {
     if (dep.isNpm5) {
       await add(dep.typeHash, options, targetFolder);
     } else {

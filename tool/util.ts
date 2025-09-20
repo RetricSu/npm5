@@ -6,7 +6,7 @@ export async function readDependencies(packageJson: any) {
     if (isNpm5) {
       const parts = version.split("/typeHash:");
       const cleanVersion = parts[0];
-      const typeHash = "0x" + parts[1];
+      const typeHash = parts[1];
       return {
         name,
         version: cleanVersion,
