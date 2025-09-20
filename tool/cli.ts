@@ -1,14 +1,11 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { ccc, hashCkb, hashTypeToBytes, Hex, hexFrom } from "@ckb-ccc/core";
-import { PackageContract } from "../sdk/contract";
-import { buildClient, buildSigner } from "../sdk/ccc";
-import fs from "node:fs";
-import path from "node:path";
 import process from "node:process";
-import systemScripts from "../deployment/system-scripts.json";
-import scripts from "../deployment/scripts.json";
+import { add } from "./add";
+import { publishPackage } from "./publish";
+import { install } from "./install";
+import path from "node:path";
 
 const program = new Command();
 
@@ -19,115 +16,8 @@ program
   .description("Add a package by its type script hash")
   .option("-n, --network <network>", "CKB network", "devnet")
   .action(async (typeHash: string, options: { network: string }) => {
-    try {
-      // Validate typeHash is 32 bytes (64 hex chars + 0x)
-      if (!/^0x[0-9a-fA-F]{64}$/.test(typeHash)) {
-        throw new Error(
-          "Type hash must be a 32-byte hex string (0x followed by 64 hex characters)",
-        );
-      }
-      // validate network
-      if (!["devnet", "testnet", "mainnet"].includes(options.network)) {
-        throw new Error("Network must be one of: devnet, testnet, mainnet");
-      }
-
-      const network = options.network as "devnet" | "testnet" | "mainnet";
-      console.log(`Using network: ${network}`);
-
-      const client = buildClient(network);
-      // @ts-ignore
-      const contractScript = scripts[network]["package.bc"];
-      const argsPrefix =
-        "0x0000" +
-        contractScript.codeHash.slice(2) +
-        hexFrom(hashTypeToBytes(contractScript.hashType)).slice(2);
-
-      // Search for cells with type script prefix
-      const cells = client.findCells({
-        script: {
-          // @ts-ignore
-          codeHash: systemScripts[network]["ckb_js_vm"].script.codeHash,
-          // @ts-ignore
-          hashType: systemScripts[network]["ckb_js_vm"].script.hashType,
-          args: argsPrefix,
-        },
-        scriptType: "type",
-        scriptSearchMode: "prefix",
-      });
-
-      let foundCell: ccc.Cell | null = null;
-      for await (const cell of cells) {
-        // Compute the script hash
-        const scriptHash = cell.cellOutput.type!.hash();
-        if (scriptHash === typeHash) {
-          foundCell = cell;
-          break;
-        }
-      }
-
-      if (!foundCell) {
-        throw new Error(`No cells found with type script hash ${typeHash}`);
-      }
-
-      const outpoint = {
-        txHash: foundCell.outPoint.txHash,
-        index: ccc.numToHex(foundCell.outPoint.index),
-      };
-
-      console.log(`Found package cell: ${outpoint.txHash}:${outpoint.index}`);
-
-      // Download to node_modules
-      const nodeModulesPath = path.resolve(process.cwd(), "node_modules");
-      const downloadPath = await PackageContract.downloadPackage(
-        outpoint,
-        nodeModulesPath,
-        client,
-      );
-
-      console.log(`Downloaded package to: ${downloadPath}`);
-
-      // Read the package.json from the downloaded package
-      const packageJsonPath = path.join(downloadPath, "package.json");
-      if (!fs.existsSync(packageJsonPath)) {
-        throw new Error("Downloaded package does not contain a package.json");
-      }
-
-      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
-      const packageName = packageJson.name;
-      const packageVersion = packageJson.version;
-
-      if (!packageName || !packageVersion) {
-        throw new Error("Package name or version not found in package.json");
-      }
-      const version = `${packageVersion}/dataHash:${hashCkb(foundCell.outputData)}`;
-
-      console.log(`Package: ${packageName}@${version}`);
-
-      // Update package.json deps
-      const rootPackageJsonPath = path.resolve(process.cwd(), "./package.json");
-      const rootPackageJson = JSON.parse(
-        fs.readFileSync(rootPackageJsonPath, "utf8"),
-      );
-
-      if (!rootPackageJson.dependencies) {
-        rootPackageJson.dependencies = {};
-      }
-
-      rootPackageJson.dependencies[packageName] = version;
-
-      fs.writeFileSync(
-        rootPackageJsonPath,
-        JSON.stringify(rootPackageJson, null, 2),
-      );
-
-      console.log(`Added ${packageName}@${version} to dependencies`);
-    } catch (error) {
-      console.error(
-        "Error:",
-        error instanceof Error ? error.message : String(error),
-      );
-      process.exit(1);
-    }
+    const targetPath = process.cwd();
+    return await add(typeHash, options, targetPath);
   });
 
 program
@@ -140,46 +30,23 @@ program
     "Output directory for chunks",
     "./test-package",
   )
+  .action(async (packageFolder: string, options) => {
+    return await publishPackage(packageFolder, options);
+  });
+
+program
+  .command("install [packageJsonFilePath]")
+  .alias("i")
+  .description("Install packages listed in package.json")
+  .option("-n, --network <network>", "CKB network", "devnet")
   .action(
     async (
-      packageFolder: string,
-      options: { network: string; output: string; privateKey: Hex },
+      packageJsonFilePath: string | undefined,
+      options: { network: string },
     ) => {
-      try {
-        // validate network
-        if (!["devnet", "testnet", "mainnet"].includes(options.network)) {
-          throw new Error("Network must be one of: devnet, testnet, mainnet");
-        }
-
-        const network = options.network as "devnet" | "testnet" | "mainnet";
-        const outputDir = options.output;
-        console.log(`Publishing package from: ${packageFolder}`);
-        console.log(`Using network: ${network}`);
-        console.log(`Output directory: ${outputDir}`);
-
-        const client = buildClient(network);
-        const signer = buildSigner(client, options.privateKey);
-
-        const contract = await PackageContract.buildFromPublishingChunkCells(
-          packageFolder,
-          signer,
-          outputDir,
-        );
-        const tx = await contract.buildCreatePackageCellTransaction(signer);
-        await tx.completeFeeBy(signer, 1000);
-        const txHash = await signer.sendTransaction(tx);
-        console.log(`Transaction sent: ${txHash}`);
-
-        // Wait for the transaction to be committed
-        await signer.client.waitTransaction(txHash, 1);
-        console.log(`Package published at ${txHash}:0x0`);
-      } catch (error) {
-        console.error(
-          "Error:",
-          error instanceof Error ? error.message : String(error),
-        );
-        process.exit(1);
-      }
+      const filePath =
+        packageJsonFilePath ?? path.resolve(process.cwd(), "package.json");
+      return await install(filePath, options);
     },
   );
 
