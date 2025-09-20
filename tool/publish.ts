@@ -5,7 +5,7 @@ import process from "node:process";
 
 export async function publishPackage(
   packageFolder: string,
-  options: { network: string; output: string; privateKey: Hex },
+  options: { network: string; output?: string; privateKey: Hex },
 ) {
   try {
     // validate network
@@ -17,7 +17,11 @@ export async function publishPackage(
     const outputDir = options.output;
     console.log(`Publishing package from: ${packageFolder}`);
     console.log(`Using network: ${network}`);
-    console.log(`Output directory: ${outputDir}`);
+    if (outputDir) {
+      console.log(`Output directory: ${outputDir}`);
+    } else {
+      console.log(`Output directory: (using temp directory)`);
+    }
 
     const client = buildClient(network);
     const signer = buildSigner(client, options.privateKey);

@@ -21,6 +21,7 @@ import scripts from "../deployment/scripts.json";
 import { normalizePath } from "./util";
 import path from "path";
 import fs from "fs";
+import os from "os";
 
 export class PackageContract {
   private data: PackageData;
@@ -43,45 +44,64 @@ export class PackageContract {
   static async buildFromPublishingChunkCells(
     packageFolderPath: string,
     signer: ccc.Signer,
-    outputDir = "./",
+    outputDir?: string,
     chunkSize = 300 * 1024, // 300 KB
   ): Promise<PackageContract> {
-    const {
-      zipFilePath: tgzPath,
-      name,
-      version,
-    } = await bundlePackage(packageFolderPath, outputDir);
-    const chunkDir = `${outputDir}/chunks`;
-    const { chunks, hash } = await chunkFile(tgzPath, chunkDir, chunkSize);
+    // Use temp directory if no outputDir specified
+    const useTempDir = !outputDir;
+    const tempDir = useTempDir
+      ? path.join(os.tmpdir(), `npm5-build-${Date.now()}`)
+      : undefined;
+    const actualOutputDir = outputDir || tempDir!;
 
-    const signerLock = (await signer.getRecommendedAddressObj()).script;
-    const toLock = {
-      codeHash: signerLock.codeHash,
-      hashType: signerLock.hashType,
-      args: signerLock.args,
-    };
-    // check if we have enough capacity to store all chunks
-    const balance = await signer.client.getBalanceSingle(signerLock);
-    const fileSizeInBytes = fs.statSync(tgzPath).size;
-    if (balance < BigInt(fileSizeInBytes)) {
-      throw new Error(
-        `Not enough CKB balance to publish package chunks. Required: ${fileSizeInBytes}, Available: ${balance.toString(10)}`,
-      );
+    try {
+      const {
+        zipFilePath: tgzPath,
+        name,
+        version,
+      } = await bundlePackage(packageFolderPath, actualOutputDir);
+      const chunkDir = `${actualOutputDir}/chunks`;
+      const { chunks, hash } = await chunkFile(tgzPath, chunkDir, chunkSize);
+
+      const signerLock = (await signer.getRecommendedAddressObj()).script;
+      const toLock = {
+        codeHash: signerLock.codeHash,
+        hashType: signerLock.hashType,
+        args: signerLock.args,
+      };
+      // check if we have enough capacity to store all chunks
+      const balance = await signer.client.getBalanceSingle(signerLock);
+      const fileSizeInBytes = fs.statSync(tgzPath).size;
+      if (balance < BigInt(fileSizeInBytes)) {
+        throw new Error(
+          `Not enough CKB balance to publish package chunks. Required: ${fileSizeInBytes}, Available: ${balance.toString(10)}`,
+        );
+      }
+
+      const chunkCells = await publishChunks(chunks, toLock, signer);
+
+      const packageData: PackageDataLike = {
+        name: encodeUtf8ToBytes20(name),
+        version: encodeUtf8ToBytes20(version),
+        hash: "0x" + hash.slice(0, 40),
+        chunks: chunks.map((c, i) => ({
+          hash: "0x" + c.hash,
+          index: i,
+        })),
+      };
+
+      return new PackageContract(packageData, chunkCells);
+    } finally {
+      // Clean up temp directory if we created one
+      if (useTempDir && tempDir) {
+        try {
+          fs.rmSync(tempDir, { recursive: true, force: true });
+        } catch (error) {
+          // Ignore cleanup errors
+          console.warn(`Failed to clean up temp directory ${tempDir}:`, error);
+        }
+      }
     }
-
-    const chunkCells = await publishChunks(chunks, toLock, signer);
-
-    const packageData: PackageDataLike = {
-      name: encodeUtf8ToBytes20(name),
-      version: encodeUtf8ToBytes20(version),
-      hash: "0x" + hash.slice(0, 40),
-      chunks: chunks.map((c, i) => ({
-        hash: "0x" + c.hash,
-        index: i,
-      })),
-    };
-
-    return new PackageContract(packageData, chunkCells);
   }
 
   static async downloadPackage(

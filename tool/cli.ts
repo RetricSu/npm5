@@ -27,8 +27,7 @@ program
   .option("-n, --network <network>", "CKB network", "devnet")
   .option(
     "-o, --output <outputDir>",
-    "Output directory for chunks",
-    "./test-package",
+    "Output directory for chunks (optional, uses temp directory if not specified)",
   )
   .action(async (packageFolder: string, options) => {
     return await publishPackage(packageFolder, options);
