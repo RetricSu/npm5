@@ -36,9 +36,9 @@ npm5/
 ├── contracts/           # Smart contract source code
 │   └── package/
 │       └── src/
-│           └── index.typescript # Contract implementation
+│           └── index.ts # Contract implementation
 ├── tests/              # Contract tests
-│   └── package.test.typescript
+│   └── package.test.ts
 ├── scripts/            # Build and utility scripts
 │   ├── build-all.js
 │   ├── build-contract.js
@@ -149,7 +149,7 @@ This will:
 
 ### Contract Development
 
-1. Edit your contract in `contracts/<contract-name>/src/index.typescript`
+1. Edit your contract in `contracts/<contract-name>/src/index.ts`
 2. Build the contract: `pnpm run build:contract <contract-name>`
 3. Run tests: `pnpm test -- <contract-name>`
 

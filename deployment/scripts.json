@@ -16,6 +16,22 @@
       ]
     }
   },
-  "testnet": {},
+  "testnet": {
+    "package.bc": {
+      "codeHash": "0x319c4f6899730e11729e55f3c0595b9887b19164eeb1079963bf6b76b6818d8d",
+      "hashType": "data1",
+      "cellDeps": [
+        {
+          "cellDep": {
+            "outPoint": {
+              "txHash": "0x49cb2768399b2ac55b5d103bbdd58e760ef1184a9470e271b4db965a1260f79e",
+              "index": 0
+            },
+            "depType": "code"
+          }
+        }
+      ]
+    }
+  },
   "mainnet": {}
 }
