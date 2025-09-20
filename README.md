@@ -25,19 +25,19 @@ Transaction sent: 0x620001cebcf3984128740782c31d2ddb98caa2d47f4b63ad5b2dc2f11470
 Package published at 0x620001cebcf3984128740782c31d2ddb98caa2d47f4b63ad5b2dc2f114703579:0x0
 ```
 
-Install and use it in your js project just like the npm-way!
+Install via its hash type and use it in your js project just like the npm-way!
 
 ```sh
-npm5 add 0x4e3d74baecad1fd3517c88e9f91ac202fdc46635970f8cdd3c20eb842ceef56e
+npm5 add 0x3b7aa7d2275c1045c2415fa39c71bf41b38b5e0c553cc874e885cdd178d30498
 
 #result
 Using network: devnet
-Found package cell: 0x2f76e4dd74bcd35254320f1e8f815962a93e422718bc29a8e438bc9dd93bad31:0x0
-Package data: {"name":"0x636b622d74657374746f6f6c0000000000000000","version":"0x312e302e33000000000000000000000000000000","hash":"0x1cdd4ee0bcf7565d4d84f33ec370ae2b53b6f0b8","chunks":[{"hash":"0xa19f5c46cad8bdc9cf72ede88a86cc4bb8ed508a0e421eba08bc59fea5c65586","index":0},{"hash":"0x46fd4467cc6f96b26e890953c91d46ae06198ebe390c02834fd9cfe6d0cc3075","index":1},{"hash":"0x4ee171454dedc0f4ca6395253cd303e37d77eea892677ee4773f294e709e0e95","index":2},{"hash":"0x0e2e113bb9bde6bb0fdc584d1adb8480a8582782ff1e8eb10c25c393f71d6f87","index":3},{"hash":"0x94912929aa60917851261af342835bf8d72e74555ca5fb2cbb29ca65642c3ff7","index":4}]}
-Downloaded package: ckb-testtool@1.0.3
-Downloaded package to: /Users/retric/Desktop/npm5/node_modules/ckb-testtool
-Package: ckb-testtool@1.0.3/dataHash:0x18518a43f308f499c56a18686b2ebafc3e42599065b1352ef82b3c5b66e0d582
-Added ckb-testtool@1.0.3 to dependencies
+Found package cell: 0x620001cebcf3984128740782c31d2ddb98caa2d47f4b63ad5b2dc2f114703579:0x0
+Package data: {"name":"0x796f63746f636f6c6f7273000000000000000000","version":"0x322e312e32000000000000000000000000000000","hash":"0x37fd8c897b31d4127feee829d8e7489b1029627f","chunks":[{"hash":"0x37fd8c897b31d4127feee829d8e7489b1029627f450fd7a7e3843812d6589c0b","index":0}]}
+Downloaded package: yoctocolors@2.1.2
+Downloaded package to: /Users/retric/Desktop/test-npm5/node_modules/yoctocolors
+Package: yoctocolors@2.1.2/typeHash:0x3b7aa7d2275c1045c2415fa39c71bf41b38b5e0c553cc874e885cdd178d30498, dataHash:0x8c947ead3f071e2ec5901cb919f324af15d46e51d20c8181c2f418fea5e47ec9
+Added yoctocolors@2.1.2/typeHash:0x3b7aa7d2275c1045c2415fa39c71bf41b38b5e0c553cc874e885cdd178d30498 to dependencies
 ```
 
 ## 🎯 What Makes npm5 Special
