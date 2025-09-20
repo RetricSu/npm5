@@ -31,7 +31,10 @@ export async function publishPackage(
       signer,
       outputDir,
     );
-    const tx = await contract.buildCreatePackageCellTransaction(signer);
+    const tx = await contract.buildCreatePackageCellTransaction(
+      signer,
+      network,
+    );
     await tx.completeFeeBy(signer, 1000);
     const txHash = await signer.sendTransaction(tx);
     console.log(`Transaction sent: ${txHash}`);

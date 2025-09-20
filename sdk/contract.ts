@@ -134,9 +134,12 @@ export class PackageContract {
 
   async buildCreatePackageCellTransaction(
     signer: ccc.Signer,
+    network: "devnet" | "testnet" | "mainnet" = "devnet",
   ): Promise<ccc.Transaction> {
-    const ckbJsVmScript = systemScripts.devnet["ckb_js_vm"];
-    const contractScript = scripts.devnet["package.bc"];
+    // @ts-ignore
+    const ckbJsVmScript = systemScripts[network]["ckb_js_vm"];
+    // @ts-ignore
+    const contractScript = scripts[network]["package.bc"];
 
     const mainScript = {
       codeHash: ckbJsVmScript.script.codeHash,
@@ -168,8 +171,12 @@ export class PackageContract {
       ],
       outputsData: [data],
       cellDeps: [
-        ...ckbJsVmScript.script.cellDeps.map((c) => c.cellDep),
-        ...contractScript.cellDeps.map((c) => c.cellDep),
+        ...ckbJsVmScript.script.cellDeps.map(
+          (c: { cellDep: CellDepLike }) => c.cellDep,
+        ),
+        ...contractScript.cellDeps.map(
+          (c: { cellDep: CellDepLike }) => c.cellDep,
+        ),
         ...this.chunkCells.flatMap((r) => {
           const cellDep: CellDepLike = {
             outPoint: {

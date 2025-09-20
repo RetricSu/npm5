@@ -25,10 +25,6 @@ program
   .description("Publish a package to the CKB network")
   .option("-k, --private-key <privateKey>", "Private key in hex format")
   .option("-n, --network <network>", "CKB network", "devnet")
-  .option(
-    "-o, --output <outputDir>",
-    "Output directory for chunks (optional, uses temp directory if not specified)",
-  )
   .action(async (packageFolder: string, options) => {
     return await publishPackage(packageFolder, options);
   });
