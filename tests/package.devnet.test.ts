@@ -41,4 +41,17 @@ describe("package contract devnet", () => {
     const fileTreesMatch = compareFileTrees(packageFolder, downloadedPackage);
     expect(fileTreesMatch).toBe(true);
   }, 60000);
+
+  test("Package Contract Class - using temp directory", async () => {
+    const packageFolder = "./node_modules/ckb-testtool";
+    // Test without providing outputDir - should use temp directory internally
+    const contract = await PackageContract.buildFromPublishingChunkCells(
+      packageFolder,
+      signer,
+    );
+    expect(contract).toBeDefined();
+    // Verify we can build a transaction with the contract
+    const tx = await contract.buildCreatePackageCellTransaction(signer);
+    expect(tx).toBeDefined();
+  }, 60000);
 });
