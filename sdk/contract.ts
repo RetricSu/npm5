@@ -61,7 +61,7 @@ export class PackageContract {
       args: signerLock.args,
     };
     // check if we have enough capacity to store all chunks
-    const balance = await signer.getBalance();
+    const balance = await signer.client.getBalanceSingle(signerLock);
     const fileSizeInBytes = fs.statSync(tgzPath).size;
     if (balance < BigInt(fileSizeInBytes)) {
       throw new Error(

@@ -4,9 +4,28 @@
 
 A decentralized js package manager built on the CKB blockchain. npm5 enables developers to easily discover, install, and manage js libraries across CKB networks.
 
+Let's starts a devnet for testing to see how it works at a glance:
+
 ```sh
-npm5
+offckb node
 ```
+
+Publish the js package to blockchain:
+
+```sh
+npm5 publish ./node_modules/yoctocolors -k 0x6109170b275a09ad54877b82f7d9930f88cab5717d484fb4741ae9d1dd078cd6
+
+#result
+Publishing package from: ./node_modules/yoctocolors
+Using network: devnet
+Output directory: ./test-package
+Published chunk /Users/retric/Desktop/test-npm5/test-package/chunks/yoctocolors-2.1.2.chunk001 in tx 0xff98073fe8eb6b54c2743fd897792f4c99c4b5800b6c5a1df22e05db80436a66
+Package Type ID: 0x09d303218790f54ed59369d3d4ab2870dfb32c8871f4f5573ad8c363f627719f, Type Hash: 0x3b7aa7d2275c1045c2415fa39c71bf41b38b5e0c553cc874e885cdd178d30498
+Transaction sent: 0x620001cebcf3984128740782c31d2ddb98caa2d47f4b63ad5b2dc2f114703579
+Package published at 0x620001cebcf3984128740782c31d2ddb98caa2d47f4b63ad5b2dc2f114703579:0x0
+```
+
+Install and use it in your js project just like the npm-way!
 
 ```sh
 npm5 add 0x4e3d74baecad1fd3517c88e9f91ac202fdc46635970f8cdd3c20eb842ceef56e
@@ -86,6 +105,12 @@ To use the `npm5` CLI globally for package management:
 
    ```bash
    npm link
+   ```
+
+   You can unlink anytime later:
+
+   ```bash
+   npm unlink
    ```
 
 3. Verify installation:
