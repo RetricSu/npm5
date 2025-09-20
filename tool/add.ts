@@ -10,6 +10,7 @@ import systemScripts from "../deployment/system-scripts.json";
 import scripts from "../deployment/scripts.json";
 import { readDependencies } from "./util";
 
+// todo: we didn't solve the conflicts version between transitive dependencies yet
 export async function add(
   typeHash: string,
   options: { network: string },
@@ -165,24 +166,22 @@ export function addViaNpm(
       stdio: "inherit",
     });
 
-    // Copy the installed package to the target node_modules
+    // Copy the installed package and its dependencies to the target node_modules
     const tempNodeModules = path.join(tempProjectDir, "node_modules");
     const targetNodeModules = path.join(targetFolder, "node_modules");
     if (!fs.existsSync(targetNodeModules)) {
       fs.mkdirSync(targetNodeModules, { recursive: true });
     }
 
-    const packageDir = path.join(tempNodeModules, packageName);
-    const targetPackageDir = path.join(targetNodeModules, packageName);
-    if (fs.existsSync(packageDir)) {
-      // Ensure parent directory exists
-      execSync(`mkdir -p "${path.dirname(targetPackageDir)}"`, {
-        stdio: "inherit",
-      });
-      // Use cp -r to copy
-      execSync(`cp -r "${packageDir}" "${targetPackageDir}"`, {
-        stdio: "inherit",
-      });
+    // Copy all packages from temp node_modules, but skip if already exists in target
+    const packages = fs.readdirSync(tempNodeModules);
+    for (const pkg of packages) {
+      const srcDir = path.join(tempNodeModules, pkg);
+      const destDir = path.join(targetNodeModules, pkg);
+      if (!fs.existsSync(destDir)) {
+        execSync(`mkdir -p "${path.dirname(destDir)}"`, { stdio: "inherit" });
+        execSync(`cp -r "${srcDir}" "${destDir}"`, { stdio: "inherit" });
+      }
     }
   } finally {
     // Clean up temp dir
