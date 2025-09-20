@@ -1,5 +1,6 @@
 import { ccc } from "@ckb-ccc/core";
-import { buildClient, buildSigner, compareFileTrees } from "./helper";
+import { compareFileTrees } from "../sdk/util";
+import { buildClient, buildSigner } from "../sdk/ccc";
 import { PackageContract } from "../sdk/contract";
 
 describe("package contract devnet", () => {
@@ -14,7 +15,7 @@ describe("package contract devnet", () => {
 
   test("Package Contract Class", async () => {
     const packageFolder = "./node_modules/ckb-testtool";
-    const outputDir = "./build";
+    const outputDir = "./test-package";
     const contract = await PackageContract.buildFromPublishingChunkCells(
       packageFolder,
       signer,

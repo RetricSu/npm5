@@ -3,6 +3,7 @@ import {
   PackageData,
   PackageDataCodec,
   encodeUtf8ToBytes20,
+  decodeBytes20ToUtf8,
 } from "./type";
 import {
   ccc,
@@ -59,6 +60,15 @@ export class PackageContract {
       hashType: signerLock.hashType,
       args: signerLock.args,
     };
+    // check if we have enough capacity to store all chunks
+    const balance = await signer.client.getBalanceSingle(signerLock);
+    const fileSizeInBytes = fs.statSync(tgzPath).size;
+    if (balance < BigInt(fileSizeInBytes)) {
+      throw new Error(
+        `Not enough CKB balance to publish package chunks. Required: ${fileSizeInBytes}, Available: ${balance.toString(10)}`,
+      );
+    }
+
     const chunkCells = await publishChunks(chunks, toLock, signer);
 
     const packageData: PackageDataLike = {
@@ -88,13 +98,17 @@ export class PackageContract {
       normalizedOutputDir,
       ".mergedFile" + Date.now(),
     );
-    const mergedFile = await downloadAndMergeChunks(
-      packageCellOutpoint,
-      tempFile,
-      client,
-    );
+    const { mergedFilePath: mergedFile, packageData } =
+      await downloadAndMergeChunks(packageCellOutpoint, tempFile, client);
 
-    const unbundlePath = await unbundlePackage(mergedFile, outputDir);
+    await unbundlePackage(mergedFile, outputDir);
+
+    const packageName = decodeBytes20ToUtf8(packageData.name);
+    const packageVersion = decodeBytes20ToUtf8(packageData.version);
+
+    console.log(`Downloaded package: ${packageName}@${packageVersion}`);
+
+    const unbundlePath = path.join(normalizePath(outputDir), packageName);
     return unbundlePath;
   }
 
@@ -156,6 +170,10 @@ export class PackageContract {
         contractScript.codeHash.slice(2) +
         hexFrom(hashTypeToBytes(contractScript.hashType)).slice(2) +
         typeId.slice(2),
+    );
+
+    console.log(
+      `Package Type ID: ${typeId}, Type Hash: ${tx.outputs[0].type!.hash()}`,
     );
 
     return tx;
