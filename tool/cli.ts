@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { ccc, hashTypeToBytes, hexFrom } from "@ckb-ccc/core";
+import { ccc, hashCkb, hashTypeToBytes, hexFrom } from "@ckb-ccc/core";
 import { PackageContract } from "../sdk/contract";
 import { buildClient } from "../sdk/ccc";
 import fs from "node:fs";
@@ -99,8 +99,9 @@ program
       if (!packageName || !packageVersion) {
         throw new Error("Package name or version not found in package.json");
       }
+      const version = `${packageVersion}/dataHash:${hashCkb(foundCell.outputData)}`;
 
-      console.log(`Package: ${packageName}@${packageVersion}`);
+      console.log(`Package: ${packageName}@${version}`);
 
       // Update package.json deps
       const rootPackageJsonPath = path.resolve(process.cwd(), "./package.json");
@@ -112,14 +113,14 @@ program
         rootPackageJson.dependencies = {};
       }
 
-      rootPackageJson.dependencies[packageName] = packageVersion;
+      rootPackageJson.dependencies[packageName] = version;
 
       fs.writeFileSync(
         rootPackageJsonPath,
         JSON.stringify(rootPackageJson, null, 2),
       );
 
-      console.log(`Added ${packageName}@${packageVersion} to dependencies`);
+      console.log(`Added ${packageName}@${version} to dependencies`);
     } catch (error) {
       console.error(
         "Error:",
