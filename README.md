@@ -4,40 +4,36 @@
 
 A decentralized js package manager built on the CKB blockchain. npm5 enables developers to easily discover, install, and manage js libraries across CKB networks.
 
-Let's starts a devnet for testing to see how it works at a glance:
-
-```sh
-offckb node
-```
+Let's use testnet to see how it works at a glance:
 
 Publish the js package to blockchain:
 
 ```sh
-npm5 publish ./node_modules/yoctocolors -k 0x6109170b275a09ad54877b82f7d9930f88cab5717d484fb4741ae9d1dd078cd6
+npm5 publish ./node_modules/yoctocolors -k 0xa5808e79c243d8e026a034273ad7a5ccdcb2f982392fd0230442b1734c98a4c2 --network testnet
 
-#result
+# result
 Publishing package from: ./node_modules/yoctocolors
-Using network: devnet
-Output directory: ./test-package
-Published chunk /Users/retric/Desktop/test-npm5/test-package/chunks/yoctocolors-2.1.2.chunk001 in tx 0xff98073fe8eb6b54c2743fd897792f4c99c4b5800b6c5a1df22e05db80436a66
-Package Type ID: 0x09d303218790f54ed59369d3d4ab2870dfb32c8871f4f5573ad8c363f627719f, Type Hash: 0x3b7aa7d2275c1045c2415fa39c71bf41b38b5e0c553cc874e885cdd178d30498
-Transaction sent: 0x620001cebcf3984128740782c31d2ddb98caa2d47f4b63ad5b2dc2f114703579
-Package published at 0x620001cebcf3984128740782c31d2ddb98caa2d47f4b63ad5b2dc2f114703579:0x0
+Using network: testnet
+Output directory: (using temp directory)
+Published chunk /var/folders/js/czddptmd75n6_8wxks_4_ytm0000gn/T/npm5-build-1758347846473/chunks/yoctocolors-2.1.2.chunk001 in tx 0xd73d1b0c30b05015007882f2da3491f8c26ddd21acebba951f884308c18a3c1c
+Package Type ID: 0x38c9207d7d27fbfd6de1e594ca896e68ae449514d934367e7e4859ca0cdf6620, Type Hash: 0x01e3fa1d15ad9bc06f5eabed61c8fcb793213ea450d53735c6a875ebddfd8e44
+Transaction sent: 0x8315b0f9ec7a8d4edfaae86a4f9fcc29e7aff94f6477d4d158b8f2a18904ad8d
+Package published at 0x8315b0f9ec7a8d4edfaae86a4f9fcc29e7aff94f6477d4d158b8f2a18904ad8d:0x0
 ```
 
-Install via its hash type and use it in your js project just like the npm-way!
+Install via its hash type and boom! You have the `yoctocolors` library in your project, just like how npm works!
 
 ```sh
-npm5 add 0x3b7aa7d2275c1045c2415fa39c71bf41b38b5e0c553cc874e885cdd178d30498
+npm5 add 0x01e3fa1d15ad9bc06f5eabed61c8fcb793213ea450d53735c6a875ebddfd8e44 --network testnet
 
-#result
-Using network: devnet
-Found package cell: 0x620001cebcf3984128740782c31d2ddb98caa2d47f4b63ad5b2dc2f114703579:0x0
+# result
+Using network: testnet
+Found package cell: 0x8315b0f9ec7a8d4edfaae86a4f9fcc29e7aff94f6477d4d158b8f2a18904ad8d:0x0
 Package data: {"name":"0x796f63746f636f6c6f7273000000000000000000","version":"0x322e312e32000000000000000000000000000000","hash":"0x37fd8c897b31d4127feee829d8e7489b1029627f","chunks":[{"hash":"0x37fd8c897b31d4127feee829d8e7489b1029627f450fd7a7e3843812d6589c0b","index":0}]}
 Downloaded package: yoctocolors@2.1.2
 Downloaded package to: /Users/retric/Desktop/test-npm5/node_modules/yoctocolors
-Package: yoctocolors@2.1.2/typeHash:0x3b7aa7d2275c1045c2415fa39c71bf41b38b5e0c553cc874e885cdd178d30498, dataHash:0x8c947ead3f071e2ec5901cb919f324af15d46e51d20c8181c2f418fea5e47ec9
-Added yoctocolors@2.1.2/typeHash:0x3b7aa7d2275c1045c2415fa39c71bf41b38b5e0c553cc874e885cdd178d30498 to dependencies
+Package: yoctocolors@2.1.2/typeHash:0x01e3fa1d15ad9bc06f5eabed61c8fcb793213ea450d53735c6a875ebddfd8e44, dataHash:0x8c947ead3f071e2ec5901cb919f324af15d46e51d20c8181c2f418fea5e47ec9
+Added yoctocolors@2.1.2/typeHash:0x01e3fa1d15ad9bc06f5eabed61c8fcb793213ea450d53735c6a875ebddfd8e44 to dependencies
 ```
 
 ## 🎯 What Makes npm5 Special
