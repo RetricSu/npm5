@@ -5,6 +5,10 @@
 A decentralized js package manager built on the CKB blockchain. npm5 enables developers to easily discover, install, and manage js libraries across CKB networks.
 
 ```sh
+npm5
+```
+
+```sh
 npm5 add 0x4e3d74baecad1fd3517c88e9f91ac202fdc46635970f8cdd3c20eb842ceef56e
 
 #result

@@ -20,6 +20,7 @@ import systemScripts from "../deployment/system-scripts.json";
 import scripts from "../deployment/scripts.json";
 import { normalizePath } from "./util";
 import path from "path";
+import fs from "fs";
 
 export class PackageContract {
   private data: PackageData;
@@ -59,6 +60,15 @@ export class PackageContract {
       hashType: signerLock.hashType,
       args: signerLock.args,
     };
+    // check if we have enough capacity to store all chunks
+    const balance = await signer.getBalance();
+    const fileSizeInBytes = fs.statSync(tgzPath).size;
+    if (balance < BigInt(fileSizeInBytes)) {
+      throw new Error(
+        `Not enough CKB balance to publish package chunks. Required: ${fileSizeInBytes}, Available: ${balance.toString(10)}`,
+      );
+    }
+
     const chunkCells = await publishChunks(chunks, toLock, signer);
 
     const packageData: PackageDataLike = {

@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { ccc, hashCkb, hashTypeToBytes, hexFrom } from "@ckb-ccc/core";
+import { ccc, hashCkb, hashTypeToBytes, Hex, hexFrom } from "@ckb-ccc/core";
 import { PackageContract } from "../sdk/contract";
-import { buildClient } from "../sdk/ccc";
+import { buildClient, buildSigner } from "../sdk/ccc";
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
@@ -129,5 +129,58 @@ program
       process.exit(1);
     }
   });
+
+program
+  .command("publish <packageFolder>")
+  .description("Publish a package to the CKB network")
+  .option("-k, --private-key <privateKey>", "Private key in hex format")
+  .option("-n, --network <network>", "CKB network", "devnet")
+  .option(
+    "-o, --output <outputDir>",
+    "Output directory for chunks",
+    "./test-package",
+  )
+  .action(
+    async (
+      packageFolder: string,
+      options: { network: string; output: string; privateKey: Hex },
+    ) => {
+      try {
+        // validate network
+        if (!["devnet", "testnet", "mainnet"].includes(options.network)) {
+          throw new Error("Network must be one of: devnet, testnet, mainnet");
+        }
+
+        const network = options.network as "devnet" | "testnet" | "mainnet";
+        const outputDir = options.output;
+        console.log(`Publishing package from: ${packageFolder}`);
+        console.log(`Using network: ${network}`);
+        console.log(`Output directory: ${outputDir}`);
+
+        const client = buildClient(network);
+        const signer = buildSigner(client, options.privateKey);
+
+        const contract = await PackageContract.buildFromPublishingChunkCells(
+          packageFolder,
+          signer,
+          outputDir,
+        );
+        const tx = await contract.buildCreatePackageCellTransaction(signer);
+        await tx.completeFeeBy(signer, 1000);
+        const txHash = await signer.sendTransaction(tx);
+        console.log(`Transaction sent: ${txHash}`);
+
+        // Wait for the transaction to be committed
+        await signer.client.waitTransaction(txHash, 1);
+        console.log(`Package published at ${txHash}:0x0`);
+      } catch (error) {
+        console.error(
+          "Error:",
+          error instanceof Error ? error.message : String(error),
+        );
+        process.exit(1);
+      }
+    },
+  );
 
 program.parse();

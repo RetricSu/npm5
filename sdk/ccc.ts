@@ -1,13 +1,13 @@
-import { ccc, CellDepInfoLike, KnownScript, Script } from "@ckb-ccc/core";
+import { ccc, CellDepInfoLike, Hex, KnownScript, Script } from "@ckb-ccc/core";
 import systemScripts from "../deployment/system-scripts.json";
 import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 
-export const buildSigner = (client: ccc.Client) => {
-  const privateKey = process.env.PRIVATE_KEY;
+export const buildSigner = (client: ccc.Client, privKey?: Hex) => {
+  const privateKey = process.env.PRIVATE_KEY ?? privKey;
   if (!privateKey) {
     throw new Error(
-      "PRIVATE_KEY is not set in environment variables or .env file",
+      "PRIVATE_KEY is not set in environment variables or .env file or passed as argument",
     );
   }
   const signer = new ccc.SignerCkbPrivateKey(client, privateKey);
