@@ -6,6 +6,10 @@
   "bin": {
     "npm5": "./build/tool/cli.js"
   },
+  "files": [
+    "build/tool/cli.js",
+    "README.md"
+  ],
   "scripts": {
     "build": "node scripts/build-all.js",
     "build:contract": "node scripts/build-contract.js",
