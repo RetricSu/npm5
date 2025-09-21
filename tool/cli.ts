@@ -6,6 +6,7 @@ import { add } from "./add";
 import { publishPackage } from "./publish";
 import { install } from "./install";
 import path from "node:path";
+import { listAvailablePackages } from "./list";
 
 const program = new Command();
 
@@ -44,5 +45,15 @@ program
       return await install(filePath, options);
     },
   );
+
+program
+  .command("list")
+  .description("List all installed packages")
+  .option("-n, --network <network>", "CKB network", "devnet")
+  .action(async (options: { network: string }) => {
+    return await listAvailablePackages(
+      options.network as "devnet" | "testnet" | "mainnet",
+    );
+  });
 
 program.parse();
