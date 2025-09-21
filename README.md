@@ -12,6 +12,10 @@ Unlike traditional package managers that rely on centralized registries, npm5 op
 - **Decentralized Verification**: Package integrity is verified through blockchain consensus
 - **Type Hash Based**: Packages are identified by their CKB type script hashes
 
+```sh
+npm install -g @retric/npm5
+```
+
 Publish the js package to blockchain:
 
 ```sh
