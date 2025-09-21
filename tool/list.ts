@@ -34,10 +34,7 @@ export async function listAvailablePackages(
     const packageData = PackageDataCodec.decode(data);
     const name = decodeBytes20ToUtf8(packageData.name);
     const version = decodeBytes20ToUtf8(packageData.version);
-    packageData.name = name;
-    packageData.version = version;
-
-    console.log(`${packageData.name}@${packageData.version}`);
+    console.log(`${name}@${version}`);
     console.log(`  TypeHash: ${cell.cellOutput.type!.hash()}`);
     console.log(
       `  Outpoint: ${cell.outPoint.txHash}:${ccc.numToHex(cell.outPoint.index)}`,

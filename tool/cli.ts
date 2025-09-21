@@ -48,7 +48,7 @@ program
 
 program
   .command("list")
-  .description("List all installed packages")
+  .description("List all available packages on the network")
   .option("-n, --network <network>", "CKB network", "devnet")
   .action(async (options: { network: string }) => {
     return await listAvailablePackages(
