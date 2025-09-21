@@ -4,7 +4,13 @@
 
 A decentralized js package manager built on the CKB blockchain. npm5 enables developers to easily discover, install, and manage js libraries across CKB networks.
 
-Let's use testnet to see how it works at a glance:
+## 🎯 What Makes npm5 Special
+
+Unlike traditional package managers that rely on centralized registries, npm5 operates entirely on-chain:
+
+- **On-Chain Registry**: Packages are stored and discovered directly on the CKB blockchain
+- **Decentralized Verification**: Package integrity is verified through blockchain consensus
+- **Type Hash Based**: Packages are identified by their CKB type script hashes
 
 Publish the js package to blockchain:
 
@@ -21,7 +27,7 @@ Transaction sent: 0x8315b0f9ec7a8d4edfaae86a4f9fcc29e7aff94f6477d4d158b8f2a18904
 Package published at 0x8315b0f9ec7a8d4edfaae86a4f9fcc29e7aff94f6477d4d158b8f2a18904ad8d:0x0
 ```
 
-Install via its hash type and boom! You have the `yoctocolors` library in your project, just like how npm works!
+Install the js package from blockchain:
 
 ```sh
 npm5 add 0x01e3fa1d15ad9bc06f5eabed61c8fcb793213ea450d53735c6a875ebddfd8e44 --network testnet
@@ -36,13 +42,9 @@ Package: yoctocolors@2.1.2/typeHash:0x01e3fa1d15ad9bc06f5eabed61c8fcb793213ea450
 Added yoctocolors@2.1.2/typeHash:0x01e3fa1d15ad9bc06f5eabed61c8fcb793213ea450d53735c6a875ebddfd8e44 to dependencies
 ```
 
-## 🎯 What Makes npm5 Special
+But why?
 
-Unlike traditional package managers that rely on centralized registries, npm5 operates entirely on-chain:
-
-- **On-Chain Registry**: Packages are stored and discovered directly on the CKB blockchain
-- **Decentralized Verification**: Package integrity is verified through blockchain consensus
-- **Type Hash Based**: Packages are identified by their CKB type script hashes
+Go read this post: [CKB, Version Control and Blockchain Evolution](https://talk.nervos.org/t/ckb-version-control-and-blockchain-evolution/4819)
 
 ## Overview
 

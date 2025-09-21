@@ -1,11 +1,15 @@
 {
-  "name": "npm5",
+  "name": "@retric/npm5",
   "version": "0.1.0",
   "description": "CKB JavaScript Smart Contract project",
   "type": "module",
   "bin": {
     "npm5": "./build/tool/cli.js"
   },
+  "files": [
+    "build/tool/cli.js",
+    "README.md"
+  ],
   "scripts": {
     "build": "node scripts/build-all.js",
     "build:contract": "node scripts/build-contract.js",
