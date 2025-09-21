@@ -1,5 +1,5 @@
 {
-  "name": "npm5",
+  "name": "@retric/npm5",
   "version": "0.1.0",
   "description": "CKB JavaScript Smart Contract project",
   "type": "module",
