@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { normalizePath } from "./util";
-import { HashFunction, ckbBlake2bHash } from "./hash";
+import { HashFunction, calcMerkleRoot, ckbBlake2bHash } from "./hash";
 
 export interface Chunk {
   path: string;
@@ -12,6 +12,7 @@ export interface Chunk {
 export interface FileChunks {
   chunks: Array<Chunk>;
   hash: string;
+  merkleRoot: string;
   hashMethod: string; // e.g., "ckb-blake2b", "sha256"
 }
 
@@ -81,7 +82,8 @@ export async function chunkFile(
   }
 
   const overallHash = hashFn(Buffer.concat(allData));
-  return { chunks, hash: overallHash, hashMethod: hashFn.name };
+  const merkleRoot = calcMerkleRoot(chunks);
+  return { chunks, hash: overallHash, merkleRoot, hashMethod: hashFn.name };
 }
 
 /**

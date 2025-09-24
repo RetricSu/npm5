@@ -61,7 +61,11 @@ export class PackageContract {
         version,
       } = await bundlePackage(packageFolderPath, actualOutputDir);
       const chunkDir = `${actualOutputDir}/chunks`;
-      const { chunks, hash } = await chunkFile(tgzPath, chunkDir, chunkSize);
+      const { chunks, hash, merkleRoot } = await chunkFile(
+        tgzPath,
+        chunkDir,
+        chunkSize,
+      );
 
       const signerLock = (await signer.getRecommendedAddressObj()).script;
       const toLock = {
@@ -84,6 +88,7 @@ export class PackageContract {
         name: encodeUtf8ToBytes20(name),
         version: encodeUtf8ToBytes20(version),
         hash: "0x" + hash.slice(0, 40),
+        merkleRoot: merkleRoot,
         chunks: chunks.map((c, i) => ({
           hash: "0x" + c.hash,
           index: i,

@@ -1,0 +1,11 @@
+{
+  "name": "sparse-merkle-tree-wasm",
+  "version": "0.1.0",
+  "files": [
+    "sparse_merkle_tree_wasm_bg.wasm",
+    "sparse_merkle_tree_wasm.js",
+    "sparse_merkle_tree_wasm.d.ts"
+  ],
+  "main": "sparse_merkle_tree_wasm.js",
+  "types": "sparse_merkle_tree_wasm.d.ts"
+}

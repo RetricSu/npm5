@@ -33,9 +33,19 @@ function main(): number {
   }
 
   // 3. check the data integrity
-  // todo: we can't check the full file hash since loading all the chunks and concat them might overflow the memory
+  // Note that we can't check the full file hash since loading all the chunks and concat them might overflow the memory
   // Instead, we can compute a merkle root hash from the chunk hashes and validate it here.
-  // For now we just do nothing with the hash
+  let smt = new bindings.Smt();
+  for (const chunk of packageData.chunks.sort((a, b) => a.index - b.index)) {
+    smt.insert(
+      bindings.hex.decode(chunk.index.toString(16)),
+      bindings.hex.decode(chunk.hash),
+    );
+  }
+  // todo: smt does not have a calculate root api yet
+  // of course we can use smt.verify(root, proof) api to check for data integrity
+  // but under our case that feels redundant and dumb since we already have all the chunk hashes
+  // const root = smt.root()
 
   // 4. check the package name and version
   // todo: name should not be changed after created

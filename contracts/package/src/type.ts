@@ -34,6 +34,7 @@ export interface PackageData {
   name: string; // utf8 string, 20 bytes
   version: string; // utf8 string, 20 bytes
   hash: string; // Hash of the full package file, 20 bytes
+  merkleRoot: string; // 32 bytes
   chunks: Array<Chunk>; // Array of chunk objects with index and hash
 }
 
@@ -41,6 +42,7 @@ export interface PackageDataLike {
   name: string;
   version: string;
   hash: string;
+  merkleRoot: string;
   chunks: Array<ChunkLike>;
 }
 
@@ -49,5 +51,6 @@ export const PackageDataCodec: mol.Codec<PackageDataLike, PackageData> =
     name: Bytes20Codec,
     version: Bytes20Codec,
     hash: Bytes20Codec,
+    merkleRoot: Bytes32Codec,
     chunks: mol.vector(ChunkCodec),
   });
