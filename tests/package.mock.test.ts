@@ -6,7 +6,12 @@ import {
   DEFAULT_SCRIPT_ALWAYS_SUCCESS,
   DEFAULT_SCRIPT_CKB_JS_VM,
 } from "ckb-testtool";
-import { ChunkLike, PackageDataCodec, PackageDataLike } from "../sdk/type";
+import {
+  ChunkLike,
+  encodeUtf8ToBytes20,
+  PackageDataCodec,
+  PackageDataLike,
+} from "../sdk/type";
 
 describe("package contract", () => {
   test("should execute successfully", async () => {
@@ -48,13 +53,20 @@ describe("package contract", () => {
       hash: hashCkb(cellDep2.outputData),
       index: 1,
     };
-    const originalPackage: PackageDataLike = {
+    const previousPackage: PackageDataLike = {
       name: "0x" + "d".repeat(40),
-      version: "0x" + "e".repeat(40),
+      version: encodeUtf8ToBytes20("1.0.0"),
       hash: "0x" + "f".repeat(40),
       chunks: [chunk1, chunk2],
     };
-    const data = PackageDataCodec.encode(originalPackage);
+    const previousData = PackageDataCodec.encode(previousPackage);
+    const updatedPackage: PackageDataLike = {
+      name: "0x" + "d".repeat(40),
+      version: encodeUtf8ToBytes20("1.0.1"),
+      hash: "0x" + "f".repeat(40),
+      chunks: [chunk1, chunk2],
+    };
+    const data = PackageDataCodec.encode(updatedPackage);
 
     mainScript.args = hexFrom(
       "0x0000" +
@@ -72,7 +84,7 @@ describe("package contract", () => {
     const inputCell = resource.mockCell(
       alwaysSuccessScript,
       mainScript,
-      "0xFF000000000000000000000000000000",
+      hexFrom(previousData),
     );
     tx.inputs.push(Resource.createCellInput(inputCell));
 
