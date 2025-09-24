@@ -40,46 +40,40 @@ function main(): number {
   // Instead, we can compute a merkle root hash from the chunk hashes and validate it here.
   // For now we just do nothing with the hash
 
-  // 4. check the package name: name should not be changed after created
+  // 4. check package name and version
+  const outputVersion = decodeBytes20ToUtf8(packageData.version);
+  if (!isValidSemver(outputVersion)) {
+    log.error(`package version is not valid semver: ${outputVersion}`);
+    return 3;
+  }
+
   if (isCellPresent(0, bindings.SOURCE_GROUP_INPUT)) {
     const inputData = HighLevel.loadCellData(0, HighLevel.SOURCE_GROUP_INPUT);
     const inputPackageData = PackageDataCodec.decode(inputData);
+
+    // 4.1 check the package name: name should not be changed after created
     if (inputPackageData.name !== packageData.name) {
       log.error(
-        `package name cannot be changed: ${inputPackageData.name} -> ${packageData.name}`,
+        `package name cannot be changed: ${decodeBytes20ToUtf8(inputPackageData.name)} -> ${decodeBytes20ToUtf8(packageData.name)}`,
       );
       return 2;
     }
-  }
 
-  // 5. check package version
-  // version should follow semver and be greater than the previous version
-  if (!isValidSemver(decodeBytes20ToUtf8(packageData.version))) {
-    log.error(`package version is not valid semver: ${packageData.version}`);
-    return 3;
-  }
-  if (isCellPresent(0, bindings.SOURCE_GROUP_INPUT)) {
-    const inputData = HighLevel.loadCellData(0, HighLevel.SOURCE_GROUP_INPUT);
-    const inputPackageData = PackageDataCodec.decode(inputData);
-    if (!isValidSemver(decodeBytes20ToUtf8(inputPackageData.version))) {
+    // 4.2 check package version: should follow semver and be greater than the previous version
+    const inputVersion = decodeBytes20ToUtf8(inputPackageData.version);
+    if (!isValidSemver(inputVersion)) {
       log.error(
-        `previous package version is not valid semver: ${inputPackageData.version}`,
+        `previous package version is not valid semver: ${inputVersion}`,
       );
       return 4;
     }
-    if (
-      compareSemver(
-        decodeBytes20ToUtf8(packageData.version),
-        decodeBytes20ToUtf8(inputPackageData.version),
-      ) <= 0
-    ) {
+    if (compareSemver(outputVersion, inputVersion) <= 0) {
       log.error(
-        `package version must be greater than previous version: ${decodeBytes20ToUtf8(inputPackageData.version)} -> ${decodeBytes20ToUtf8(packageData.version)}`,
+        `package version must be greater than previous version: ${inputVersion} -> ${outputVersion}`,
       );
       return 5;
     }
   }
-
   return 0;
 }
 

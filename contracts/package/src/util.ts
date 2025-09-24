@@ -89,12 +89,9 @@ function decodeUTF8(bytes: number[]): string {
 
 export const encodeUtf8ToBytes20 = (str: string): string => {
   const bytes = encodeUTF8(str);
-  const truncated = bytes.length > 20 ? bytes.slice(0, 20) : bytes;
-  const padded = new Array(20).fill(0);
-  for (let i = 0; i < truncated.length; i++) {
-    padded[i] = truncated[i];
-  }
-  return binding.hex.encode(new Uint8Array(padded).buffer);
+  const padded = new Uint8Array(20);
+  padded.set(bytes.slice(0, 20));
+  return binding.hex.encode(padded.buffer);
 };
 
 export const decodeBytes20ToUtf8 = (hex: string): string => {

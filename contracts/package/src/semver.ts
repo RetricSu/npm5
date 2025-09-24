@@ -25,7 +25,9 @@ export function isValidSemver(version: string): boolean {
 export function compareSemver(a: string, b: string): number {
   const pa = parseSemver(a);
   const pb = parseSemver(b);
-  if (!pa || !pb) return 0;
+  if (!pa) throw new Error(`Invalid semver string: ${a}`);
+  if (!pb) throw new Error(`Invalid semver string: ${b}`);
+
   if (pa.major !== pb.major) return pa.major > pb.major ? 1 : -1;
   if (pa.minor !== pb.minor) return pa.minor > pb.minor ? 1 : -1;
   if (pa.patch !== pb.patch) return pa.patch > pb.patch ? 1 : -1;
