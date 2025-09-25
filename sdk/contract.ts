@@ -63,12 +63,8 @@ export class PackageContract {
       const chunkDir = `${actualOutputDir}/chunks`;
       const { chunks, hash } = await chunkFile(tgzPath, chunkDir, chunkSize);
 
-      const signerLock = (await signer.getRecommendedAddressObj()).script;
-      const toLock = {
-        codeHash: signerLock.codeHash,
-        hashType: signerLock.hashType,
-        args: signerLock.args,
-      };
+      const signerAddress = await signer.getRecommendedAddressObj();
+      const signerLock = signerAddress.script;
       // check if we have enough capacity to store all chunks
       const balance = ccc.fixedPointToString(
         await signer.client.getBalanceSingle(signerLock),
@@ -81,11 +77,11 @@ export class PackageContract {
         );
       } else {
         console.debug(
-          `CKB balance: ${balance} CKB, Package will consume at least: ${fileSizeInBytes} CKB`,
+          `${signerAddress.toString()} CKB balance: ${balance} CKB, Package will consume at least: ${fileSizeInBytes} CKB`,
         );
       }
 
-      const chunkCells = await publishChunks(chunks, toLock, signer);
+      const chunkCells = await publishChunks(chunks, signerLock, signer);
 
       const packageData: PackageDataLike = {
         name: encodeUtf8ToBytes20(name),

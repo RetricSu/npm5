@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 
 export const buildSigner = (client: ccc.Client, privKey?: Hex) => {
-  const privateKey = process.env.PRIVATE_KEY ?? privKey;
+  const privateKey = privKey ?? process.env.PRIVATE_KEY;
   if (!privateKey) {
     throw new Error(
       "PRIVATE_KEY is not set in environment variables or .env file or passed as argument",
