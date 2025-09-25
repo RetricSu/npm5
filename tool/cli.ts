@@ -11,7 +11,10 @@ import { version } from "../package.json";
 
 const program = new Command();
 
-program.name("npm5").description("JavaScript package manager on CKB").version(version);
+program
+  .name("npm5")
+  .description("JavaScript package manager on CKB")
+  .version(version);
 
 program
   .command("add <typeHash>")
