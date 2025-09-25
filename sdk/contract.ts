@@ -70,11 +70,18 @@ export class PackageContract {
         args: signerLock.args,
       };
       // check if we have enough capacity to store all chunks
-      const balance = await signer.client.getBalanceSingle(signerLock);
+      const balance = ccc.fixedPointToString(
+        await signer.client.getBalanceSingle(signerLock),
+        8,
+      );
       const fileSizeInBytes = fs.statSync(tgzPath).size;
-      if (balance < BigInt(fileSizeInBytes)) {
+      if (parseInt(balance) < fileSizeInBytes) {
         throw new Error(
-          `Not enough CKB balance to publish package chunks. Required: ${fileSizeInBytes}, Available: ${balance.toString(10)}`,
+          `Not enough CKB balance to publish package chunks. Required: ${fileSizeInBytes} CKB, Available: ${balance} CKB`,
+        );
+      } else {
+        console.debug(
+          `CKB balance: ${balance} CKB, Package will consume at least: ${fileSizeInBytes} CKB`,
         );
       }
 
