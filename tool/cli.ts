@@ -7,10 +7,14 @@ import { publishPackage } from "./publish";
 import { install } from "./install";
 import path from "node:path";
 import { listAvailablePackages } from "./list";
+import { version } from "../package.json";
 
 const program = new Command();
 
-program.name("npm5").description("CKB package manager").version("0.1.0");
+program
+  .name("npm5")
+  .description("JavaScript package manager on CKB")
+  .version(version);
 
 program
   .command("add <typeHash>")

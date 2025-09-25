@@ -63,22 +63,25 @@ export class PackageContract {
       const chunkDir = `${actualOutputDir}/chunks`;
       const { chunks, hash } = await chunkFile(tgzPath, chunkDir, chunkSize);
 
-      const signerLock = (await signer.getRecommendedAddressObj()).script;
-      const toLock = {
-        codeHash: signerLock.codeHash,
-        hashType: signerLock.hashType,
-        args: signerLock.args,
-      };
+      const signerAddress = await signer.getRecommendedAddressObj();
+      const signerLock = signerAddress.script;
       // check if we have enough capacity to store all chunks
-      const balance = await signer.client.getBalanceSingle(signerLock);
+      const balance = ccc.fixedPointToString(
+        await signer.client.getBalanceSingle(signerLock),
+        8,
+      );
       const fileSizeInBytes = fs.statSync(tgzPath).size;
-      if (balance < BigInt(fileSizeInBytes)) {
+      if (parseInt(balance) < fileSizeInBytes) {
         throw new Error(
-          `Not enough CKB balance to publish package chunks. Required: ${fileSizeInBytes}, Available: ${balance.toString(10)}`,
+          `Not enough CKB balance to publish package chunks. Required: ${fileSizeInBytes} CKB, Available: ${balance} CKB`,
+        );
+      } else {
+        console.debug(
+          `${signerAddress.toString()} CKB balance: ${balance} CKB, Package will consume at least: ${fileSizeInBytes} CKB`,
         );
       }
 
-      const chunkCells = await publishChunks(chunks, toLock, signer);
+      const chunkCells = await publishChunks(chunks, signerLock, signer);
 
       const packageData: PackageDataLike = {
         name: encodeUtf8ToBytes20(name),

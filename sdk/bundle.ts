@@ -2,6 +2,7 @@ import packlist from "npm-packlist";
 import fs from "fs";
 import path from "node:path";
 import { normalizePath } from "./util";
+import { sha256Hash } from "./hash";
 
 const tar = require("tar");
 const Arborist = require("@npmcli/arborist");
@@ -28,7 +29,7 @@ export async function bundlePackage(
   const files = await packlist(tree);
 
   // 2. 把列表打成 tar → gzip
-  const tgzName = `${pkgJson.name}-${pkgJson.version}.tgz`;
+  const tgzName = `${sha256Hash(pkgJson.name)}-${pkgJson.version}.tgz`;
   const outputDirectory = outputDir ? normalizePath(outputDir) : pkgRoot;
   const fullPath = path.join(outputDirectory, tgzName);
   // Ensure output directory exists

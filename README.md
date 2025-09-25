@@ -19,31 +19,45 @@ npm install -g @retric/npm5
 Publish the js package to blockchain:
 
 ```sh
-npm5 publish ./node_modules/yoctocolors -k 0xa5808e79c243d8e026a034273ad7a5ccdcb2f982392fd0230442b1734c98a4c2 --network testnet
+npm5 publish ./node_modules/@ckb-js-std/bindings --network testnet
 
 # result
-Publishing package from: ./node_modules/yoctocolors
+Publishing package from: ./node_modules/@ckb-js-std/bindings
 Using network: testnet
 Output directory: (using temp directory)
-Published chunk /var/folders/js/czddptmd75n6_8wxks_4_ytm0000gn/T/npm5-build-1758347846473/chunks/yoctocolors-2.1.2.chunk001 in tx 0xd73d1b0c30b05015007882f2da3491f8c26ddd21acebba951f884308c18a3c1c
-Package Type ID: 0x38c9207d7d27fbfd6de1e594ca896e68ae449514d934367e7e4859ca0cdf6620, Type Hash: 0x01e3fa1d15ad9bc06f5eabed61c8fcb793213ea450d53735c6a875ebddfd8e44
-Transaction sent: 0x8315b0f9ec7a8d4edfaae86a4f9fcc29e7aff94f6477d4d158b8f2a18904ad8d
-Package published at 0x8315b0f9ec7a8d4edfaae86a4f9fcc29e7aff94f6477d4d158b8f2a18904ad8d:0x0
+ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsq2prryvze6fhufxkgjx35psh7w70k3hz7c3mtl4d CKB balance: 22641.18108626 CKB, Package will consume at least: 4647 CKB
+Published chunk /var/folders/js/czddptmd75n6_8wxks_4_ytm0000gn/T/npm5-build-1758775173690/chunks/2d2924df0072a00db93139f96685f7ecf52d97837639bc88523dbcf6605d28b9-1.0.0.chunk001 in tx 0x1ebb9c67cd2d67cddf38381912fcbe6aaa61cf735b7bc319949f8e19724038f9
+Package Type ID: 0x404dc433140b53ae8456665a5dfdb770a0f9e812c75f9fbaee41d038ba3ff77d, Type Hash: 0x22e1932fa40de75d7c143dc3d9f2a2a4853c9a0c4caf89cb3ac3ce63939c7218
+Transaction sent: 0xd2cfc922d0a7f1444009a2c18633e028899d1514185f43bcba248136dab75582
+Package published at 0xd2cfc922d0a7f1444009a2c18633e028899d1514185f43bcba248136dab75582:0x0
 ```
 
-Install the js package from blockchain:
+Install the js package via its type hash from blockchain:
 
 ```sh
-npm5 add 0x01e3fa1d15ad9bc06f5eabed61c8fcb793213ea450d53735c6a875ebddfd8e44 --network testnet
+npm5 add 0x22e1932fa40de75d7c143dc3d9f2a2a4853c9a0c4caf89cb3ac3ce63939c7218 --network testnet
 
 # result
 Using network: testnet
-Found package cell: 0x8315b0f9ec7a8d4edfaae86a4f9fcc29e7aff94f6477d4d158b8f2a18904ad8d:0x0
-Package data: {"name":"0x796f63746f636f6c6f7273000000000000000000","version":"0x322e312e32000000000000000000000000000000","hash":"0x37fd8c897b31d4127feee829d8e7489b1029627f","chunks":[{"hash":"0x37fd8c897b31d4127feee829d8e7489b1029627f450fd7a7e3843812d6589c0b","index":0}]}
-Downloaded package: yoctocolors@2.1.2
-Downloaded package to: /Users/retric/Desktop/test-npm5/node_modules/yoctocolors
-Package: yoctocolors@2.1.2/typeHash:0x01e3fa1d15ad9bc06f5eabed61c8fcb793213ea450d53735c6a875ebddfd8e44, dataHash:0x8c947ead3f071e2ec5901cb919f324af15d46e51d20c8181c2f418fea5e47ec9
-Added yoctocolors@2.1.2/typeHash:0x01e3fa1d15ad9bc06f5eabed61c8fcb793213ea450d53735c6a875ebddfd8e44 to dependencies
+Found package cell: 0xd2cfc922d0a7f1444009a2c18633e028899d1514185f43bcba248136dab75582:0x0
+Package data: {"name":"0x40636b622d6a732d7374642f62696e64696e6773","version":"0x312e302e30000000000000000000000000000000","hash":"0x90cb74d7fef5419bc2896433b6b0b6c58dfdd23b","chunks":[{"hash":"0x90cb74d7fef5419bc2896433b6b0b6c58dfdd23b58eca9648b1cf3c3d8c39e1c","index":0}]}
+Downloaded package: @ckb-js-std/bindings@1.0.0
+Downloaded package to: /Users/retric/Desktop/npm5/node_modules/@ckb-js-std/bindings
+Package: @ckb-js-std/bindings@1.0.0/typeHash:0x22e1932fa40de75d7c143dc3d9f2a2a4853c9a0c4caf89cb3ac3ce63939c7218, dataHash:0x29536e69b87dc8d252aeac561feadf25ecf36380d4272dcceece2393722beda1
+Added @ckb-js-std/bindings@1.0.0/typeHash:0x22e1932fa40de75d7c143dc3d9f2a2a4853c9a0c4caf89cb3ac3ce63939c7218 to dependencies
+```
+
+List all the available packages on blockchain:
+
+```sh
+npm5 list --network testnet
+
+# result
+@ckb-js-std/bindings@1.0.0
+  TypeHash: 0x22e1932fa40de75d7c143dc3d9f2a2a4853c9a0c4caf89cb3ac3ce63939c7218
+  Outpoint: 0xd2cfc922d0a7f1444009a2c18633e028899d1514185f43bcba248136dab75582:0x0
+  Controlled By Lock Hash: 0x4472b33b4e1845ebe82f2ce5f511bbe012f144c5f3d7b539909adffc83ccda61
+--------------------------------------------------
 ```
 
 But why?
