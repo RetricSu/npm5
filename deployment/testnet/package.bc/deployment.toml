@@ -1,6 +1,6 @@
 [[cells]]
 name = "package.bc"
-enable_type_id = false
+enable_type_id = true
 
   [cells.location]
   file = "/Users/retric/Desktop/npm5/dist/package.bc"

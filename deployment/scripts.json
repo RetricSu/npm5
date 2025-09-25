@@ -18,13 +18,13 @@
   },
   "testnet": {
     "package.bc": {
-      "codeHash": "0x319c4f6899730e11729e55f3c0595b9887b19164eeb1079963bf6b76b6818d8d",
-      "hashType": "data1",
+      "codeHash": "0x9cdb884948e646b660f6bb36a24b06c44db9344353bb198985e16e562d1c05fa",
+      "hashType": "type",
       "cellDeps": [
         {
           "cellDep": {
             "outPoint": {
-              "txHash": "0x49cb2768399b2ac55b5d103bbdd58e760ef1184a9470e271b4db965a1260f79e",
+              "txHash": "0x204fe6eacbc4aa9f699b756696408f8763a26288b96323751b5a6ba644d198ec",
               "index": 0
             },
             "depType": "code"
