@@ -82,7 +82,7 @@ Sample output:
 
 ## Project Structure
 
-```sh
+```text
 npm5/
 ├── contracts/                 # Smart contract source code
 │   └── package/
@@ -163,7 +163,7 @@ To use the `npm5` CLI globally for package management:
 3. Run tests: `pnpm test -- <contract-name>`
 
 
-Build contracts go to `dist/` directory:
+Built contracts are placed in the `dist/` directory:
 
 - `dist/{contract-name}.js` - Bundled JavaScript code
 - `dist/{contract-name}.bc` - Compiled bytecode for CKB execution
