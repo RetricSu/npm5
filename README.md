@@ -16,7 +16,7 @@ For background, see [CKB, Version Control and Blockchain Evolution](https://talk
 
 ## Quick Start
 
-***For users who just want to install and use npm5 as a package manager***
+**_For users who just want to install and use npm5 as a package manager_**
 
 ### 1. Install CLI
 
@@ -48,9 +48,9 @@ Package published at 0xd2cfc922d0a7f1444009a2c18633e028899d1514185f43bcba248136d
 ```sh
 npm5 add 0x22e1932fa40de75d7c143dc3d9f2a2a4853c9a0c4caf89cb3ac3ce63939c7218 --network testnet
 ```
+
 A **type script hash** is the `blake2b` hash of the [Type Script](https://docs.nervos.org/docs/tech-explanation/type-script).  
 In npm5, it serves as the unique identifier for a package on CKB, since the Type Script stores the package metadata.
-
 
 Sample output:
 
@@ -117,7 +117,7 @@ npm5/
 
 ## Development Setup
 
-***For contributors and advanced users building npm5 from source***
+**_For contributors and advanced users building npm5 from source_**
 
 ### Prerequisites
 
@@ -134,34 +134,31 @@ pnpm install
 
 To use the `npm5` CLI globally for package management:
 
-   ```bash
-   pnpm run build:cli
-   npm link
-   ```
+```bash
+pnpm run build:cli
+npm link
+```
 
-   Verify installation:
+Verify installation:
 
-   ```bash
-   npm5 --version
-   npm5 --help
-   ```
+```bash
+npm5 --version
+npm5 --help
+```
 
-   Unlink anytime:
+Unlink anytime:
 
-   ```bash
-   npm unlink
-   ```
-
+```bash
+npm unlink
+```
 
 **Note**: The CLI requires ES modules (`"type": "module"` in package.json). If you encounter module-related errors, ensure you're using Node.js v20+ and the CLI has been built with the correct configuration.
-
 
 ### Contract Development
 
 1. Edit your contract in `contracts/<contract-name>/src/index.ts`
 2. Build the contract: `pnpm run build:contract <contract-name>`
 3. Run tests: `pnpm test -- <contract-name>`
-
 
 Built contracts are placed in the `dist/` directory:
 
