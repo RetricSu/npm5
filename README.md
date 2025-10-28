@@ -2,26 +2,37 @@
 
 > Code is common knowledge!
 
-A decentralized js package manager built on the CKB blockchain. npm5 enables developers to easily discover, install, and manage js libraries across CKB networks.
+A decentralized JS package manager built on the CKB blockchain. npm5 enables developers to easily discover, install, and manage JS libraries across CKB networks.
 
-## 🎯 What Makes npm5 Special
+## 🎯 Why npm5?
 
-Unlike traditional package managers that rely on centralized registries, npm5 operates entirely on-chain:
+Unlike traditional package managers that rely on centralized registries, npm5 flips that model:
 
 - **On-Chain Registry**: Packages are stored and discovered directly on the CKB blockchain
 - **Decentralized Verification**: Package integrity is verified through blockchain consensus
-- **Type Hash Based**: Packages are identified by their CKB type script hashes
+- **Type Hash Based**: Packages are identified by their CKB Type Script hashes
+
+For background, see [CKB, Version Control and Blockchain Evolution](https://talk.nervos.org/t/ckb-version-control-and-blockchain-evolution/4819)
+
+## Quick Start
+
+**_For users who just want to install and use npm5 as a package manager_**
+
+### 1. Install CLI
 
 ```sh
 npm install -g @retric/npm5
 ```
 
-Publish the js package to blockchain:
+### 2. Publish a JS package:
 
 ```sh
 npm5 publish ./node_modules/@ckb-js-std/bindings --network testnet
+```
 
-# result
+Sample output:
+
+```sh
 Publishing package from: ./node_modules/@ckb-js-std/bindings
 Using network: testnet
 Output directory: (using temp directory)
@@ -32,12 +43,18 @@ Transaction sent: 0xd2cfc922d0a7f1444009a2c18633e028899d1514185f43bcba248136dab7
 Package published at 0xd2cfc922d0a7f1444009a2c18633e028899d1514185f43bcba248136dab75582:0x0
 ```
 
-Install the js package via its type hash from blockchain:
+### 3. Install a JS package via its Type Script hash
 
 ```sh
 npm5 add 0x22e1932fa40de75d7c143dc3d9f2a2a4853c9a0c4caf89cb3ac3ce63939c7218 --network testnet
+```
 
-# result
+A **type script hash** is the `blake2b` hash of the [Type Script](https://docs.nervos.org/docs/tech-explanation/type-script).  
+In npm5, it serves as the unique identifier for a package on CKB, since the Type Script stores the package metadata.
+
+Sample output:
+
+```sh
 Using network: testnet
 Found package cell: 0xd2cfc922d0a7f1444009a2c18633e028899d1514185f43bcba248136dab75582:0x0
 Package data: {"name":"0x40636b622d6a732d7374642f62696e64696e6773","version":"0x312e302e30000000000000000000000000000000","hash":"0x90cb74d7fef5419bc2896433b6b0b6c58dfdd23b","chunks":[{"hash":"0x90cb74d7fef5419bc2896433b6b0b6c58dfdd23b58eca9648b1cf3c3d8c39e1c","index":0}]}
@@ -47,12 +64,15 @@ Package: @ckb-js-std/bindings@1.0.0/typeHash:0x22e1932fa40de75d7c143dc3d9f2a2a48
 Added @ckb-js-std/bindings@1.0.0/typeHash:0x22e1932fa40de75d7c143dc3d9f2a2a4853c9a0c4caf89cb3ac3ce63939c7218 to dependencies
 ```
 
-List all the available packages on blockchain:
+### 4. List packages
 
 ```sh
 npm5 list --network testnet
+```
 
-# result
+Sample output:
+
+```sh
 @ckb-js-std/bindings@1.0.0
   TypeHash: 0x22e1932fa40de75d7c143dc3d9f2a2a4853c9a0c4caf89cb3ac3ce63939c7218
   Outpoint: 0xd2cfc922d0a7f1444009a2c18633e028899d1514185f43bcba248136dab75582:0x0
@@ -60,137 +80,79 @@ npm5 list --network testnet
 --------------------------------------------------
 ```
 
-But why?
-
-Go read this post: [CKB, Version Control and Blockchain Evolution](https://talk.nervos.org/t/ckb-version-control-and-blockchain-evolution/4819)
-
-## Overview
-
-This project uses the CKB JavaScript VM (ckb-js-vm) to write smart contracts in TypeScript. The contracts are compiled to bytecode and can be deployed to the CKB blockchain. npm5 provides the tooling to manage these contracts as reusable packages that other developers can easily install and use in their projects.
-
 ## Project Structure
 
 ```text
 npm5/
-├── contracts/           # Smart contract source code
+├── contracts/                 # Smart contract source code
 │   └── package/
 │       └── src/
-│           └── index.ts # Contract implementation
-├── tests/              # Contract tests
-│   └── package.test.ts
-├── scripts/            # Build and utility scripts
-│   ├── build-all.js
-│   ├── build-contract.js
-│   └── add-contract.js
-├── dist/               # Compiled output (generated)
-│   ├── package.js  # Bundled JavaScript
-│   └── package.bc  # Compiled bytecode
-├── package.json
-├── tsconfig.json       # TypeScript configuration
-├── tsconfig.base.json  # Base TypeScript settings
-├── jest.config.cjs     # Jest testing configuration
-└── README.md
+│           ├── index.ts       # Main entry point for the contract
+│           ├── semver.ts      # Semantic versioning utilities (parse, validate, compare)
+│           ├── type.ts        # Type definitions used in contracts
+│           └── util.ts        # Helper functions for contract logic
+├── deployment/                # Deployment configuration & artifacts
+│   ├── README.md              # Instructions for deploying contracts
+│   ├── devnet/                # Devnet deployment files
+│   │   └── package.bc/        # Binary contract package for devnet
+│   │       ├── deployment.toml  # Deployment config (network, params, etc.)
+│   │       └── migrations/      # Migration scripts for contract upgrades
+│   ├── scripts.json           # Deployment script config
+│   ├── system-scripts.json    # Predefined system scripts config
+│   └── testnet/               # Testnet deployment files
+│       └── package.bc/
+│           ├── deployment.toml
+│           └── migrations/
+├── jest.config.cjs            # Jest test runner config
+├── package.json               # Project metadata & dependencies
+├── pnpm-lock.yaml             # Dependency lock file (for pnpm)
+├── scripts/                   # Build & deployment scripts
+├── sdk/                       # SDK for interacting with contracts
+├── tests/                     # Unit & integration tests
+├── tool/                      # CLI tool implementation
+├── README.md                  # Project overview & usage docs
+├── tsconfig.base.json         # Base TypeScript config
+└── tsconfig.json              # Main TypeScript config (extends base)
 ```
 
-## Getting Started
+## Development Setup
+
+**_For contributors and advanced users building npm5 from source_**
 
 ### Prerequisites
 
 - Node.js (v20 or later)
 - pnpm package manager
 
-### Installation
+### 1. Install dependencies
 
-1. Install dependencies:
+```bash
+pnpm install
+```
 
-   ```bash
-   pnpm install
-   ```
-
-### CLI Setup
+### 2. Build & Link CLI
 
 To use the `npm5` CLI globally for package management:
 
-1. Build the CLI:
+```bash
+pnpm run build:cli
+npm link
+```
 
-   ```bash
-   pnpm run build:cli
-   ```
-
-2. Link the CLI globally:
-
-   ```bash
-   npm link
-   ```
-
-   You can unlink anytime later:
-
-   ```bash
-   npm unlink
-   ```
-
-3. Verify installation:
-
-   ```bash
-   npm5 --version
-   npm5 --help
-   ```
-
-Now you can use `npm5` commands from anywhere:
+Verify installation:
 
 ```bash
-# Add a package by type hash
-npm5 add 0x4e3d74baecad1fd3517c88e9f91ac202fdc46635970f8cdd3c20eb842ceef56e
-
-# Show help
+npm5 --version
 npm5 --help
 ```
 
+Unlink anytime:
+
+```bash
+npm unlink
+```
+
 **Note**: The CLI requires ES modules (`"type": "module"` in package.json). If you encounter module-related errors, ensure you're using Node.js v20+ and the CLI has been built with the correct configuration.
-
-### Building Contracts
-
-Build all contracts:
-
-```bash
-pnpm run build
-```
-
-Build a specific contract:
-
-```bash
-pnpm run build:contract package
-```
-
-### Running Tests
-
-Run all tests:
-
-```bash
-pnpm test
-```
-
-Run tests for a specific contract:
-
-```bash
-pnpm test -- package
-```
-
-### Adding New Contracts
-
-Create a new contract:
-
-```bash
-pnpm run add-contract my-new-contract
-```
-
-This will:
-
-- Create a new contract directory under `contracts/`
-- Generate a basic contract template
-- Create a corresponding test file
-
-## Development
 
 ### Contract Development
 
@@ -198,14 +160,10 @@ This will:
 2. Build the contract: `pnpm run build:contract <contract-name>`
 3. Run tests: `pnpm test -- <contract-name>`
 
-### Build Output
-
-All contracts are built to the global `dist/` directory:
+Built contracts are placed in the `dist/` directory:
 
 - `dist/{contract-name}.js` - Bundled JavaScript code
 - `dist/{contract-name}.bc` - Compiled bytecode for CKB execution
-
-### Testing
 
 Tests use the `ckb-testtool` framework to simulate CKB blockchain execution. Each test:
 
